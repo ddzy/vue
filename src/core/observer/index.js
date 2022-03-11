@@ -173,6 +173,10 @@ export function defineReactive (
     set: function reactiveSetter (newVal) {
       const value = getter ? getter.call(obj) : val
       /* eslint-disable no-self-compare */
+      /**
+       * 1. 新老值相同
+       * 2. NaN
+       */
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
       }

@@ -44,6 +44,20 @@ export function resolveInject (inject: any, vm: Component): ?Object {
       ? Reflect.ownKeys(inject)
       : Object.keys(inject)
 
+    /**
+     * inject: {
+     *    key1: {
+     *      from: 'xxx',
+     *      default: 'xxx',
+     *    },
+     * }
+     *
+     * inject: ['key1', 'key2']
+     */
+    /**
+     * 根据当前实例中声明的 inject 中的 key，寻找离它最近并且 provide 中具有相同 key 的父级实例
+     */
+
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i]
       // #6574 in case the inject object is observed...

@@ -44,6 +44,7 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // 首次渲染时
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
@@ -109,6 +110,7 @@ export function createComponent (
     return
   }
 
+  // baseCtor => Vue
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
@@ -186,6 +188,7 @@ export function createComponent (
   installComponentHooks(data)
 
   // return a placeholder vnode
+  // 占位的组件都以 vue-component-xxx 命名
   const name = Ctor.options.name || tag
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
@@ -211,6 +214,8 @@ export function createComponentInstanceForVnode (
   // activeInstance in lifecycle state
   parent: any
 ): Component {
+  // 首次渲染时
+  // 假设 VNode 为 APP，那么 options.parent 为使用 APP 组件的 vm 实例
   const options: InternalComponentOptions = {
     _isComponent: true,
     _parentVnode: vnode,

@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.6.14
- * (c) 2014-2021 Evan You
+ * (c) 2014-2022 Evan You
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -46,7 +46,7 @@
 
   /**
    * Quick object check - this is primarily used to tell
-   * Objects from primitive values when we know the value
+   * objects from primitive values when we know the value
    * is a JSON-compliant type.
    */
   function isObject (obj) {
@@ -1052,6 +1052,10 @@
       set: function reactiveSetter (newVal) {
         var value = getter ? getter.call(obj) : val;
         /* eslint-disable no-self-compare */
+        /**
+         * 1. 新老值相同
+         * 2. NaN
+         */
         if (newVal === value || (newVal !== newVal && value !== value)) {
           return
         }
@@ -2382,7 +2386,7 @@
     return isDef(node) && isDef(node.text) && isFalse(node.isComment)
   }
 
-  function normalizeArrayChildren (children, nestedIndex) {
+  function normalizeArrayChildren(children, nestedIndex) {
     var res = [];
     var i, c, lastIndex, last;
     for (i = 0; i < children.length; i++) {
@@ -2469,6 +2473,20 @@
       var keys = hasSymbol
         ? Reflect.ownKeys(inject)
         : Object.keys(inject);
+
+      /**
+       * inject: {
+       *    key1: {
+       *      from: 'xxx',
+       *      default: 'xxx',
+       *    },
+       * }
+       *
+       * inject: ['key1', 'key2']
+       */
+      /**
+       * 根据当前实例中声明的 inject 中的 key，寻找离它最近并且 provide 中具有相同 key 的父级实例
+       */
 
       for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
@@ -5084,7 +5102,7 @@
     return modified
   }
 
-  function Vue (options) {
+  function Vue(options) {
     if (!(this instanceof Vue)
     ) {
       warn('Vue is a constructor and should be called with the `new` keyword');
@@ -7620,7 +7638,9 @@
     }
     var on = vnode.data.on || {};
     var oldOn = oldVnode.data.on || {};
-    target$1 = vnode.elm;
+    // vnode is empty when removing all listeners,
+    // and use old vnode dom element
+    target$1 = vnode.elm || oldVnode.elm;
     normalizeEvents(on);
     updateListeners(on, oldOn, add$1, remove$2, createOnceHandler$1, vnode.context);
     target$1 = undefined;
@@ -7628,7 +7648,8 @@
 
   var events = {
     create: updateDOMListeners,
-    update: updateDOMListeners
+    update: updateDOMListeners,
+    destroy: function (vnode) { return updateDOMListeners(vnode, emptyNode); }
   };
 
   /*  */
@@ -9180,7 +9201,7 @@
       }
     }
     if (staticClass) {
-      el.staticClass = JSON.stringify(staticClass);
+      el.staticClass = JSON.stringify(staticClass.replace(/\s+/g, ' ').trim());
     }
     var classBinding = getBindingAttr(el, 'class', false /* getStatic */);
     if (classBinding) {

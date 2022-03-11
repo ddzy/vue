@@ -140,7 +140,18 @@ export function createPatchFunction (backend) {
       vnode = ownerArray[index] = cloneVNode(vnode)
     }
 
+    // 首次渲染时
+    // 第一次 patch
+    // vnode -> #app
+    // parentElm -> document.body
+    // refElm -> #app.nextSibling
+    // 第二次 patch
+    // vnode -> App 组件.render()
+    // parentElm -> #app
+
     vnode.isRootInsert = !nested // for transition enter check
+    // 如果当前 VNode 是 placeholder 占位组件
+    // 占位组件不需要挂载到页面上，所以无需创建 DOM
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -435,16 +446,21 @@ export function createPatchFunction (backend) {
         oldEndVnode = oldCh[--oldEndIdx]
         newEndVnode = newCh[--newEndIdx]
       } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+        // 节点被移到最后了
         patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx)
         canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
         oldStartVnode = oldCh[++oldStartIdx]
         newEndVnode = newCh[--newEndIdx]
       } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+        // 节点被移到最前面了
         patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
         canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
         oldEndVnode = oldCh[--oldEndIdx]
         newStartVnode = newCh[++newStartIdx]
       } else {
+        // 如果指针移动完成，新的 VNode 上还有未遍历到的子节点
+        // 1. 查找 oldVNode 上的子节点是否可以复用
+        // 2. 如果不能复用，就把新增的子节点插入 DOM
         if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
         idxInOld = isDef(newStartVnode.key)
           ? oldKeyToIdx[newStartVnode.key]
@@ -697,7 +713,11 @@ export function createPatchFunction (backend) {
     }
   }
 
-  return function patch (oldVnode, vnode, hydrating, removeOnly) {
+  /**
+   * oldVnode: Element | VNode
+   */
+  return function patch(oldVnode, vnode, hydrating, removeOnly) {
+    // 如果没有新的 VNode，那么表明当前的 VNode 需要被销毁
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
@@ -716,6 +736,8 @@ export function createPatchFunction (backend) {
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
+        // 如果是首次挂载，或者新老 VNode 的 key 不相同
+        // 根据新 VNode 的 tag 来递归创建 DOM 树，并将其挂载到页面上
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform

@@ -18,10 +18,13 @@ import {
   invokeWithErrorHandling
 } from '../util/index'
 
+
 export let activeInstance: any = null
 export let isUpdatingChildComponent: boolean = false
 
 export function setActiveInstance(vm: Component) {
+  // 1. prev -> null  active -> root
+  // 2. prev -> root active -> root.1
   const prevActiveInstance = activeInstance
   activeInstance = vm
   return () => {
@@ -41,6 +44,10 @@ export function initLifecycle (vm: Component) {
     parent.$children.push(vm)
   }
 
+  // 首次渲染时
+  // 对于 App 组件
+  // vm.$parent -> new Vue() 对应的 vm 实例
+  // vm.$root -> new Vue() 对应的 vm 实例
   vm.$parent = parent
   vm.$root = parent ? parent.$root : vm
 

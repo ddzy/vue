@@ -185,6 +185,7 @@ function initComputed (vm: Component, computed: Object) {
 
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 组件中利用 computed 计算属性，也会创建 Watcher
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -356,6 +357,7 @@ export function stateMixin (Vue: Class<Component>) {
     }
     options = options || {}
     options.user = true
+    // 组件中使用 watch 监听某个属性，会创建 Watcher
     const watcher = new Watcher(vm, expOrFn, cb, options)
     if (options.immediate) {
       const info = `callback for immediate watcher "${watcher.expression}"`

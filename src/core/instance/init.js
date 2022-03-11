@@ -29,6 +29,7 @@ export function initMixin (Vue: Class<Component>) {
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
+    // 比如在首次渲染的过程中，实例化 APP 组件时（h（App）），会进入此 if
     if (options && options._isComponent) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
@@ -74,6 +75,9 @@ export function initMixin (Vue: Class<Component>) {
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
   const opts = vm.$options = Object.create(vm.constructor.options)
   // doing this because it's faster than dynamic enumeration.
+  // 以首次渲染时的 APP 组件为例
+  // vm.$options._parentVnode -> { tag: 'vue-component-app', data: { hooks: { init() {} } }, componentOptions: { Ctor: App } }
+  // vm.$options.parent -> activeInstance -> new Vue()，因为 App 组件是在 new Vue 里面被当成 children 实例化的，所以 App 的 parent 就是 new Vue（$root）
   const parentVnode = options._parentVnode
   opts.parent = options.parent
   opts._parentVnode = parentVnode

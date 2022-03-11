@@ -96,6 +96,10 @@ declare type ASTDirective = {
 
 declare type ASTNode = ASTElement | ASTText | ASTExpression;
 
+/**
+ * 标签元素
+ * 比如：<div class="xxx"></div>
+ */
 declare type ASTElement = {
   type: 1;
   tag: string;
@@ -180,6 +184,10 @@ declare type ASTElement = {
   appendAsTree?: boolean;
 };
 
+/**
+ * 插值表达式
+ * {{ xxx }}
+ */
 declare type ASTExpression = {
   type: 2;
   expression: string;
@@ -192,6 +200,9 @@ declare type ASTExpression = {
   end?: number;
 };
 
+/**
+ * 静态文本或注释
+ */
 declare type ASTText = {
   type: 3;
   text: string;
