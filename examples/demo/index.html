@@ -7,164 +7,41 @@
     <script src="../../dist/vue.js"></script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <p>{{ computedName }}</p>
+      <button @click="flag = !flag">Toggle flag</button>
+    </div>
   </body>
   <script>
-    const app = new Vue({
-      el: "#app",
-      render: function (h) {
+    const AppComponent = Vue.component("App", {
+      render(h) {
         return h(
           "div",
           {
-            attrs: {
-              title: "app",
-              id: "app",
-            },
-            class: "app",
-            domProps: {},
+            class: "app-container",
           },
-          [
-            h(
-              "p",
-              {
-                class: {
-                  "is-a": true,
-                  "can-b": true,
-                },
-                style: {
-                  fontSize: "20px",
-                  fontWeight: "bold",
-                  color: "red",
-                },
-                props: {
-                  message: {
-                    type: String,
-                    default: "",
-                  },
-                },
-              },
-              [
-                h(
-                  "span",
-                  {
-                    props: {
-                      message: {
-                        type: String,
-                        default: "",
-                      },
-                    },
-                  },
-                  `第一行文本: ${this.message}`
-                ),
-                h("span", {}, "第二行文本"),
-              ]
-            ),
-          ]
+          "1234"
         );
       },
-      data: {
-        message: "demodemo!",
-        d1: {
-          a: 1,
-          b: 2,
+    });
+    const app = new Vue({
+      el: "#app",
+      components: {},
+      data() {
+        return {
+          firstName: "zhaoyang",
+          lastName: "duan",
+        };
+      },
+      computed: {
+        computedFlag() {
+          return this.flag ? 1 : 0;
         },
-      },
-      watch: {
-        message: {
-          handler(newValue) {
-            console.log('newValue :>> ', newValue);
-          },
+        computedName() {
+          return `${this.lastName} ${this.firstName}`;
         },
-      },
-      beforeCreate() {
-        console.log('this.message :>> ', this.message);
-      },
-      beforeMount() {
-        console.log('this._vnode :>> ', this._vnode);
-      },
-      mounted() {
-        console.log('this._vnode :>> ', this._vnode);
-      },
-      methods: {
-        m1() {},
       },
     });
-
-    console.log("app :>> ", app);
   </script>
-
-  <script>
-    // const arr = [1, 2, 3, [4, 5, 6, [7, 8, 9, [10, 11, 12]]]];
-    // function plat(arr) {
-    //   debugger;
-    //   let res = [];
-
-    //   for (let i = 0, length = arr.length; i < length; i++) {
-    //     if (Array.isArray(arr[i])) {
-    //       res = res.concat(plat(arr[i]));
-    //     } else {
-    //       res.push(arr[i]);
-    //     }
-    //   }
-
-    //   return res;
-    // }
-
-    // const result = plat(arr);
-    // console.log("result :>> ", result);
-
-    // const list = [1, 2, 3, 4, 5, 6, 7];
-    // function sum(arr, n) {
-    //   let res = 0;
-
-    //   if(n <= 0) {
-    //     return res;
-    //   }
-    //   return res + arr[n - 1] + sum(arr, n - 1);
-    // }
-    // const result = sum(list, 5);
-    // console.log('result :>> ', result);
-
-    // function countDown(n) {
-    //   if(n < 1) {
-    //     return [];
-    //   }
-    //   return [n].concat(countDown(n - 1))
-    // }
-    // const result = countDown(11);
-    // console.log('result :>> ', result);
-
-    // function rangeOfNumbers(start, end) {
-    //   if(start === end) {
-    //     return [start];
-    //   }
-    //   return [start].concat(rangeOfNumbers(start + 1, end - 1)).concat([end]);
-    // }
-    // const result = rangeOfNumbers(3, 11);
-    // console.log('result :>> ', result);
-    // console.log('rangeOfNumbers(1) :>> ', rangeOfNumbers(1, 1));
-
-    // 1 10
-    // 2 10 * (1 + 0.05)
-    // 3 10 * (1 + 0.05) * (1 + 0.05)
-    // function remu(n) {
-    //   if(n <= 1) {
-    //     return 10000;
-    //   }
-    //   return remu(n - 1) * (1 + 0.05);
-    // }
-    // console.log('remu(50) :>> ', remu(50));
-
-    // function sumOfArr(arr, n) {
-    //   if(n <= 0) {
-    //     return 0;
-    //   }
-    //   return sumOfArr(arr, n - 1) + arr[n - 1];
-    // }
-    // console.log('sumOfArr([1, 2, 3, 4, 5, 6, 7]) :>> ', sumOfArr([9, 2, 3, 4, 5, 6, 7], 5));
-
-    function reverse(num) {
-      function _helper(num, i) {}
-    }
-  </script>
+  <script></script>
 </html>

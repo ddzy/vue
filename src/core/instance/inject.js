@@ -20,6 +20,7 @@ export function initInjections (vm: Component) {
     Object.keys(result).forEach(key => {
       /* istanbul ignore else */
       if (process.env.NODE_ENV !== 'production') {
+        // 可以直接通过`this.xxx`访问 inject 注入的值
         defineReactive(vm, key, result[key], () => {
           warn(
             `Avoid mutating an injected value directly since the changes will be ` +

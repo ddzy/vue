@@ -1564,7 +1564,8 @@
         mergeField(key);
       }
     }
-    function mergeField (key) {
+    function mergeField(key) {
+      // 默认的合并策略是：优先选取 child options 上的键
       var strat = strats[key] || defaultStrat;
       options[key] = strat(parent[key], child[key], vm, key);
     }
@@ -2386,7 +2387,7 @@
     return isDef(node) && isDef(node.text) && isFalse(node.isComment)
   }
 
-  function normalizeArrayChildren(children, nestedIndex) {
+  function normalizeArrayChildren (children, nestedIndex) {
     var res = [];
     var i, c, lastIndex, last;
     for (i = 0; i < children.length; i++) {
@@ -2452,6 +2453,7 @@
       Object.keys(result).forEach(function (key) {
         /* istanbul ignore else */
         {
+          // 可以直接通过`this.xxx`访问 inject 注入的值
           defineReactive$$1(vm, key, result[key], function () {
             warn(
               "Avoid mutating an injected value directly since the changes will be " +
@@ -3155,6 +3157,7 @@
         var mountedNode = vnode; // work around flow
         componentVNodeHooks.prepatch(mountedNode, mountedNode);
       } else {
+        // 首次渲染时
         var child = vnode.componentInstance = createComponentInstanceForVnode(
           vnode,
           activeInstance
@@ -3221,6 +3224,7 @@
       return
     }
 
+    // baseCtor => Vue
     var baseCtor = context.$options._base;
 
     // plain options object: turn it into a constructor
@@ -3298,6 +3302,7 @@
     installComponentHooks(data);
 
     // return a placeholder vnode
+    // 占位的组件都以 vue-component-xxx 命名
     var name = Ctor.options.name || tag;
     var vnode = new VNode(
       ("vue-component-" + (Ctor.cid) + (name ? ("-" + name) : '')),
@@ -3315,6 +3320,8 @@
     // activeInstance in lifecycle state
     parent
   ) {
+    // 首次渲染时
+    // 假设 VNode 为 APP，那么 options.parent 为使用 APP 组件的 vm 实例
     var options = {
       _isComponent: true,
       _parentVnode: vnode,
@@ -3450,6 +3457,7 @@
     if (typeof tag === 'string') {
       var Ctor;
       ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag);
+      // 普通 DOM 标签
       if (config.isReservedTag(tag)) {
         // platform built-in elements
         if (isDef(data) && isDef(data.nativeOn) && data.tag !== 'component') {
@@ -3463,6 +3471,7 @@
           undefined, undefined, context
         );
       } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+        // 组件
         // component
         vnode = createComponent(Ctor, data, context, children, tag);
       } else {
@@ -3928,10 +3937,13 @@
 
   /*  */
 
+
   var activeInstance = null;
   var isUpdatingChildComponent = false;
 
   function setActiveInstance(vm) {
+    // 1. prev -> null  active -> root
+    // 2. prev -> root active -> root.1
     var prevActiveInstance = activeInstance;
     activeInstance = vm;
     return function () {
@@ -3951,6 +3963,10 @@
       parent.$children.push(vm);
     }
 
+    // 首次渲染时
+    // 对于 App 组件
+    // vm.$parent -> new Vue() 对应的 vm 实例
+    // vm.$root -> new Vue() 对应的 vm 实例
     vm.$parent = parent;
     vm.$root = parent ? parent.$root : vm;
 
@@ -4663,7 +4679,7 @@
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
 
-  function initState (vm) {
+  function initState(vm) {
     vm._watchers = [];
     var opts = vm.$options;
     if (opts.props) { initProps(vm, opts.props); }
@@ -4802,6 +4818,7 @@
 
       if (!isSSR) {
         // create internal watcher for the computed property.
+        // 组件中利用 computed 计算属性，也会创建 Watcher
         watchers[key] = new Watcher(
           vm,
           getter || noop,
@@ -4858,7 +4875,7 @@
   }
 
   function createComputedGetter (key) {
-    return function computedGetter () {
+    return function computedGetter() {
       var watcher = this._computedWatchers && this._computedWatchers[key];
       if (watcher) {
         if (watcher.dirty) {
@@ -4972,6 +4989,7 @@
       }
       options = options || {};
       options.user = true;
+      // 组件中使用 watch 监听某个属性，会创建 Watcher
       var watcher = new Watcher(vm, expOrFn, cb, options);
       if (options.immediate) {
         var info = "callback for immediate watcher \"" + (watcher.expression) + "\"";
@@ -5006,6 +5024,7 @@
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
+      // 比如在首次渲染的过程中，实例化 APP 组件时（h（App）），会进入此 if
       if (options && options._isComponent) {
         // optimize internal component instantiation
         // since dynamic options merging is pretty slow, and none of the
@@ -5049,6 +5068,9 @@
   function initInternalComponent (vm, options) {
     var opts = vm.$options = Object.create(vm.constructor.options);
     // doing this because it's faster than dynamic enumeration.
+    // 以首次渲染时的 APP 组件为例
+    // vm.$options._parentVnode -> { tag: 'vue-component-app', data: { hooks: { init() {} } }, componentOptions: { Ctor: App } }
+    // vm.$options.parent -> activeInstance -> new Vue()，因为 App 组件是在 new Vue 里面被当成 children 实例化的，所以 App 的 parent 就是 new Vue（$root）
     var parentVnode = options._parentVnode;
     opts.parent = options.parent;
     opts._parentVnode = parentVnode;
@@ -5102,7 +5124,7 @@
     return modified
   }
 
-  function Vue(options) {
+  function Vue (options) {
     if (!(this instanceof Vue)
     ) {
       warn('Vue is a constructor and should be called with the `new` keyword');
@@ -5978,7 +6000,18 @@
         vnode = ownerArray[index] = cloneVNode(vnode);
       }
 
+      // 首次渲染时
+      // 第一次 patch
+      // vnode -> #app
+      // parentElm -> document.body
+      // refElm -> #app.nextSibling
+      // 第二次 patch
+      // vnode -> App 组件.render()
+      // parentElm -> #app
+
       vnode.isRootInsert = !nested; // for transition enter check
+      // 如果当前 VNode 是 placeholder 占位组件
+      // 占位组件不需要挂载到页面上，所以无需创建 DOM
       if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
         return
       }
@@ -6255,16 +6288,21 @@
           oldEndVnode = oldCh[--oldEndIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+          // 节点被移到最后了
           patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
           canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm));
           oldStartVnode = oldCh[++oldStartIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+          // 节点被移到最前面了
           patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
           canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
           oldEndVnode = oldCh[--oldEndIdx];
           newStartVnode = newCh[++newStartIdx];
         } else {
+          // 如果指针移动完成，新的 VNode 上还有未遍历到的子节点
+          // 1. 查找 oldVNode 上的子节点是否可以复用
+          // 2. 如果不能复用，就把新增的子节点插入 DOM
           if (isUndef(oldKeyToIdx)) { oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx); }
           idxInOld = isDef(newStartVnode.key)
             ? oldKeyToIdx[newStartVnode.key]
@@ -6517,7 +6555,11 @@
       }
     }
 
-    return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    /**
+     * oldVnode: Element | VNode
+     */
+    return function patch(oldVnode, vnode, hydrating, removeOnly) {
+      // 如果没有新的 VNode，那么表明当前的 VNode 需要被销毁
       if (isUndef(vnode)) {
         if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
         return
@@ -6536,6 +6578,8 @@
           // patch existing root node
           patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
         } else {
+          // 如果是首次挂载，或者新老 VNode 的 key 不相同
+          // 根据新 VNode 的 tag 来递归创建 DOM 树，并将其挂载到页面上
           if (isRealElement) {
             // mounting to a real element
             // check if this is server-rendered content and if we can perform

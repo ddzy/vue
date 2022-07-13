@@ -30,9 +30,12 @@ export default class Watcher {
   cb: Function;
   id: number;
   deep: boolean;
+  // user：true，表明此 watcher 为 watch 或者手动调用 this.$watch
   user: boolean;
+  // lazy：true，代表为 computed watcher
   lazy: boolean;
   sync: boolean;
+  // 只有当 computed 依赖的 data 发生变化时，才设置 dirty 为 true，即下一次读取 computed 属性值时调用 setter 重新计算
   dirty: boolean;
   active: boolean;
   deps: Array<Dep>;
