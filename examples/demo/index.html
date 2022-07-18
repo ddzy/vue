@@ -5,32 +5,55 @@
     <title>demo</title>
     <!-- Delete ".min" for console warnings in development -->
     <script src="../../dist/vue.js"></script>
+    <style></style>
   </head>
   <body>
     <div id="app">
-      <p>{{ computedName }}</p>
+      <app-component :flag="flag"></app-component>
       <button @click="flag = !flag">Toggle flag</button>
     </div>
+    <template id="appComponent">
+      <div v-if="!flag">
+        <h3>标题一</h3>
+        <p>内容一</p>
+      </div>
+      <ul v-else>
+        <h3>标题二</h3>
+        <p>内容一</p>
+      </ul>
+    </template>
   </body>
   <script>
-    const AppComponent = Vue.component("App", {
+    const AppComponent = Vue.component("AppComponent", {
+      template: "#appComponent",
+      props: {
+        flag: {
+          type: Boolean,
+          required: true,
+        },
+      },
+    });
+    const AppComponent2 = Vue.component("AppComponent2", {
       render(h) {
         return h(
           "div",
           {
-            class: "app-container",
+            class: "app-2-container",
           },
-          "1234"
+          "5678"
         );
       },
     });
     const app = new Vue({
       el: "#app",
-      components: {},
+      components: {
+        AppComponent,
+      },
       data() {
         return {
           firstName: "zhaoyang",
           lastName: "duan",
+          flag: false,
         };
       },
       computed: {
@@ -42,6 +65,7 @@
         },
       },
     });
+
+    console.log("app :>> ", app);
   </script>
-  <script></script>
 </html>

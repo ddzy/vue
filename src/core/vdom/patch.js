@@ -765,6 +765,10 @@ export function createPatchFunction (backend) {
           oldVnode = emptyNodeAt(oldVnode)
         }
 
+        // 1. 创建新节点
+        // 2. 更新父级占位符节点
+        // 3. 删除旧节点
+
         // replacing existing element
         const oldElm = oldVnode.elm
         const parentElm = nodeOps.parentNode(oldElm)
@@ -783,6 +787,7 @@ export function createPatchFunction (backend) {
         // update parent placeholder node element, recursively
         if (isDef(vnode.parent)) {
           let ancestor = vnode.parent
+          // 嵌套组件的情况下，依次向上级寻找真实的 DOM 元素，只有 DOM 元素才能被 patch
           const patchable = isPatchable(vnode)
           while (ancestor) {
             for (let i = 0; i < cbs.destroy.length; ++i) {
