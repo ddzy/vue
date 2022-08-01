@@ -63,6 +63,7 @@ export function parseHTML (html, options) {
     // Make sure we're not in a plaintext content element like script/style
     if (!lastTag || !isPlainTextElement(lastTag)) {
       let textEnd = html.indexOf('<')
+      // 如果整个字符串模板是以 < 开头的
       if (textEnd === 0) {
         // Comment:
         if (comment.test(html)) {

@@ -5,67 +5,298 @@
     <title>demo</title>
     <!-- Delete ".min" for console warnings in development -->
     <script src="../../dist/vue.js"></script>
-    <style></style>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body,
+      ul,
+      li,
+      p {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+    </style>
   </head>
   <body>
-    <div id="app">
-      <app-component :flag="flag"></app-component>
-      <button @click="flag = !flag">Toggle flag</button>
-    </div>
-    <template id="appComponent">
-      <div v-if="!flag">
-        <h3>标题一</h3>
-        <p>内容一</p>
-      </div>
-      <ul v-else>
-        <h3>标题二</h3>
-        <p>内容一</p>
-      </ul>
-    </template>
   </body>
   <script>
-    const AppComponent = Vue.component("AppComponent", {
-      template: "#appComponent",
-      props: {
-        flag: {
-          type: Boolean,
-          required: true,
-        },
-      },
-    });
-    const AppComponent2 = Vue.component("AppComponent2", {
-      render(h) {
-        return h(
-          "div",
-          {
-            class: "app-2-container",
-          },
-          "5678"
-        );
-      },
-    });
-    const app = new Vue({
-      el: "#app",
-      components: {
-        AppComponent,
-      },
-      data() {
-        return {
-          firstName: "zhaoyang",
-          lastName: "duan",
-          flag: false,
-        };
-      },
-      computed: {
-        computedFlag() {
-          return this.flag ? 1 : 0;
-        },
-        computedName() {
-          return `${this.lastName} ${this.firstName}`;
-        },
-      },
-    });
+    // const AppComponent = Vue.component("AppComponent", {
+    //   template: "#appComponent",
+    //   props: {
+    //     flag: {
+    //       type: Boolean,
+    //       required: true,
+    //     },
+    //   },
+    // });
+    // const AppComponent2 = Vue.component("AppComponent2", {
+    //   render(h) {
+    //     return h(
+    //       "div",
+    //       {
+    //         class: "app-2-container",
+    //       },
+    //       "5678"
+    //     );
+    //   },
+    // });
+    // const app = new Vue({
+    //   el: "#app",
+    //   template: `
+    //     <div class="container">
+    //       <app-component :flag="flag"></app-component>
+    //       <button @click="flag = !flag">Toggle flag</button>
+    //     </div>
+    //   `,
+    //   components: {
+    //     AppComponent,
+    //   },
+    //   data() {
+    //     return {
+    //       firstName: "zhaoyang",
+    //       lastName: "duan",
+    //       flag: false,
+    //     };
+    //   },
+    //   computed: {
+    //     computedFlag() {
+    //       return this.flag ? 1 : 0;
+    //     },
+    //     computedName() {
+    //       return `${this.lastName} ${this.firstName}`;
+    //     },
+    //   },
+    // });
+  </script>
+  <script>
+    // const vm = new Vue({
+    //   el: ".wrapper",
+    //   data() {
+    //     return {
+    //       data: this.getData(),
+    //       screenHeight: window.innerHeight,
+    //       positions: [],
+    //       scrollTop: 0,
 
-    console.log("app :>> ", app);
+    //       initialItemHeight: 100,
+    //     };
+    //   },
+    //   computed: {
+    //     computedWrapper() {
+    //       return this.$refs.wrapperRef;
+    //     },
+    //     computedList() {
+    //       return this.$refs.listRef;
+    //     },
+    //     computedGhost() {
+    //       return this.$refs.ghostRef;
+    //     },
+    //     computedItems() {
+    //       return this.computedList ? this.computedList.children : [];
+    //     },
+    //     computedItemContents() {
+    //       return this.computedList.querySelectorAll("p");
+    //     },
+    //     computedGhostHeight() {
+    //       return this.positions[this.positions.length - 1].bottom;
+    //     },
+    //     computedStartIndex() {
+    //       if (this.scrollTop === 0) {
+    //         return 0;
+    //       }
+    //       const foundStart = this.positions.find(
+    //         (v) => this.scrollTop >= v.bottom
+    //       );
+    //       return foundStart ? foundStart.index : 0;
+    //     },
+    //     computedEndIndex() {
+    //       const foundEnd = this.positions.find(
+    //         (v) =>
+    //           v.bottom - this.positions[this.computedStartIndex].bottom >=
+    //           this.screenHeight
+    //       );
+
+    //       return foundEnd ? foundEnd.index : 0;
+    //     },
+    //     computedFinalData() {
+    //       return this.data.slice(
+    //         this.computedStartIndex,
+    //         this.computedEndIndex + 1
+    //       );
+    //     },
+    //   },
+    //   watch: {
+    //     computedStartIndex(newStartIndex) {
+    //       console.log("newStartIndex :>> ", newStartIndex);
+    //     },
+    //     computedEndIndex(newEndIndex) {
+    //       console.log("newEndIndex :>> ", newEndIndex);
+    //     },
+    //   },
+    //   methods: {
+    //     getData() {
+    //       const data = [];
+
+    //       for (let i = 0; i < 1000; i++) {
+    //         data.push({
+    //           _id: i,
+    //           value: `${i}-${String(i).repeat(
+    //             Math.random() * (1000 - 800) + 50
+    //           )}`,
+    //         });
+    //       }
+    //       return data;
+    //     },
+    //     updatePositions() {
+    //       [...this.computedItems].forEach((v) => {
+    //       const index = Number(v.getAttribute("id"));
+    //       const rect = v.getBoundingClientRect();
+    //       const prevIndex = index - 1 < 0 ? 0 : index - 1;
+
+    //       console.log('prevIndex :>> ', prevIndex);
+
+    //       this.positions[index] = {
+    //         ...this.positions[index],
+    //         height: rect.height,
+    //         // 上一个列表项的 bottom + 当前列表项的高度
+    //         bottom: rect.bottom + this.positions[prevIndex].bottom,
+    //         top: this.positions[prevIndex].bottom,
+    //       };
+    //     });
+    //     },
+    //   },
+    //   created() {
+    //     this.positions = this.data.map((v, index) => ({
+    //       index,
+    //       height: this.initialItemHeight,
+    //       bottom: (index + 1) * this.initialItemHeight,
+    //       top: index * this.initialItemHeight,
+    //     }));
+    //   },
+    //   mounted() {
+    //     this.computedWrapper.addEventListener("scroll", (e) => {
+    //       this.scrollTop = e.currentTarget.scrollTop;
+    //     });
+    //     this.updatePositions();
+    //   },
+    //   updated() {
+    //     this.updatePositions();
+    //   },
+    // });
+  </script>
+  <script>
+    // const list = document.getElementById("list");
+    // const wrapper = document.querySelector(".wrapper");
+    // const ghost = document.querySelector("#ghost");
+    // const content = document.querySelector(".item-content");
+
+    // const data = getData();
+    // // 每一项的预估高度
+    // const itemHeight = 100;
+    // // 可视区域的高度
+    // const screenHeight = window.innerHeight;
+    // // 每次渲染多少个
+    // const groupSize = Math.ceil(screenHeight / itemHeight);
+    // // 起始位置
+    // let startIndex = 0;
+    // // 最终位置
+    // let endIndex =
+    //   startIndex + groupSize <= data.length
+    //     ? startIndex + groupSize - 1
+    //     : data.length - 1;
+    // // 存储列表每一项的真实高度
+    // const positions = data.map((v, index) => {
+    //   return {
+    //     index,
+    //     height: itemHeight,
+    //     top: index * itemHeight,
+    //     bottom: (index + 1) * itemHeight,
+    //   };
+    // });
+
+    // function getData() {
+    //   const data = [];
+
+    //   for (let i = 0; i < 1000; i++) {
+    //     data.push({
+    //       _id: i,
+    //       value: `${i}-${String(i).repeat(Math.random() * (1000 - 800) + 50)}`,
+    //     });
+    //   }
+    //   return data;
+    // }
+    // function throttle(callback, timestamp) {
+    //   let prevTime = Date.now();
+    //   return function (...args) {
+    //     let currentTime = Date.now();
+    //     if (currentTime - prevTime >= timestamp) {
+    //       callback.apply(this, args);
+    //       prevTime = currentTime;
+    //     }
+    //   };
+    // }
+    // function render(start, end) {
+    //   if (positions.length !== data.length) {
+    //     // 把已经渲染出来的列表项的位置大小信息缓存起来
+    //     const children = list.querySelectorAll(".item-content");
+    //     for (let i = 0; i < children.length; i++) {
+    //       const dom = children[i];
+    //       const rect = dom.getBoundingClientRect();
+    //       const pos = Number(dom.getAttribute("id"));
+    //       positions[pos] = {
+    //         ...positions[pos],
+    //         height: rect.height,
+    //         top: rect.top,
+    //         bottom: rect.bottom,
+    //       };
+    //     }
+    //   }
+
+    //   const div = document.createElement("div");
+    //   for (let i = start; i <= end; i++) {
+    //     const li = document.createElement("li");
+    //     const p = document.createElement("p");
+    //     li.appendChild(p);
+    //     li.setAttribute("id", data[i]._id);
+    //     li.classList.add("item");
+    //     p.classList.add("item-content");
+    //     p.textContent = data[i].value;
+    //     li.style.cssText += `height: ${positions[i] ? "auto" : itemHeight}px`;
+    //     div.appendChild(li);
+    //   }
+    //   list.innerHTML = div.innerHTML;
+    // }
+
+    // // 第一次渲染
+    // render(startIndex, endIndex);
+    // // 监听滚动，滚动时动态计算起始和结束位置
+    // wrapper.addEventListener("scroll", throttle(handleScroll, 10));
+
+    // function handleScroll(e) {
+    //   const scrollTop = this.scrollTop;
+    //   // startIndex = Math.ceil(scrollTop / itemHeight);
+    //   // endIndex =
+    //   //   startIndex + groupSize <= data.length
+    //   //     ? startIndex + groupSize - 1
+    //   //     : data.length - 1;
+
+    //   let newStartIndex = positions.find((v) => v.top <= 0);
+    //   let newEndIndex = positions.find((v) => v.bottom <= 0);
+    //   startIndex = newStartIndex ? newStartIndex.index + 1 : 0;
+    //   endIndex = newEndIndex ? newEndIndex.index + 1 : 10;
+
+    //   render(startIndex, endIndex);
+
+    //   // 重新计算渲染区域的位置，避免被顶到上面去
+    //   list.style.cssText += `
+    //     transform: translate3d(0, ${scrollTop}px, 0)
+    //   `;
+    // }
+  </script>
+  <script>
+    // 懒加载
   </script>
 </html>

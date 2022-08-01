@@ -92,8 +92,11 @@ export function parse (
     el.attrsMap['v-bind:is'] ||
     !(el.attrsMap.is ? isReservedTag(el.attrsMap.is) : isReservedTag(el.tag))
   )
+  // transforms = [klass.transformNode, style.transformNode, ]
   transforms = pluckModuleFunction(options.modules, 'transformNode')
+  // preTransforms = [model.preTransformNode]
   preTransforms = pluckModuleFunction(options.modules, 'preTransformNode')
+  // postTransforms = []
   postTransforms = pluckModuleFunction(options.modules, 'postTransformNode')
 
   delimiters = options.delimiters

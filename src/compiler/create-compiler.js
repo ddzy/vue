@@ -5,7 +5,9 @@ import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
 export function createCompilerCreator (baseCompile: Function): Function {
-  return function createCompiler (baseOptions: CompilerOptions) {
+  return function createCompiler(baseOptions: CompilerOptions) {
+    // src/platforms/web/compiler/options.js
+    // src/platforms/web/entry-runtime-with-compiler.js
     function compile (
       template: string,
       options?: CompilerOptions

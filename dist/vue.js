@@ -9410,6 +9410,7 @@
       // Make sure we're not in a plaintext content element like script/style
       if (!lastTag || !isPlainTextElement(lastTag)) {
         var textEnd = html.indexOf('<');
+        // 如果整个字符串模板是以 < 开头的
         if (textEnd === 0) {
           // Comment:
           if (comment.test(html)) {
@@ -9721,8 +9722,11 @@
       el.attrsMap['v-bind:is'] ||
       !(el.attrsMap.is ? isReservedTag(el.attrsMap.is) : isReservedTag(el.tag))
     ); };
+    // transforms = [klass.transformNode, style.transformNode, ]
     transforms = pluckModuleFunction(options.modules, 'transformNode');
+    // preTransforms = [model.preTransformNode]
     preTransforms = pluckModuleFunction(options.modules, 'preTransformNode');
+    // postTransforms = []
     postTransforms = pluckModuleFunction(options.modules, 'postTransformNode');
 
     delimiters = options.delimiters;
@@ -11845,6 +11849,7 @@
       // turn code into functions
       var res = {};
       var fnGenErrors = [];
+      // src/compiler/index.js
       res.render = createFunction(compiled.render, fnGenErrors);
       res.staticRenderFns = compiled.staticRenderFns.map(function (code) {
         return createFunction(code, fnGenErrors)
@@ -11876,7 +11881,9 @@
   /*  */
 
   function createCompilerCreator (baseCompile) {
-    return function createCompiler (baseOptions) {
+    return function createCompiler(baseOptions) {
+      // src/platforms/web/compiler/options.js
+      // src/platforms/web/entry-runtime-with-compiler.js
       function compile (
         template,
         options
