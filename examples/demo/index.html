@@ -18,9 +18,25 @@
         padding: 0;
         list-style: none;
       }
+      img {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <div id="wrapper">
+      <img
+        v-for="v in imgList"
+        :src="v.src"
+        :data-src="v.dataSrc"
+        :style="{
+          width: `${v.width}px`,
+          height: `${v.height}px`,
+        }"
+        alt=""
+        ref="imgRef"
+      />
+    </div>
   </body>
   <script>
     // const AppComponent = Vue.component("AppComponent", {
@@ -298,5 +314,53 @@
   </script>
   <script>
     // 懒加载
+    const vm = new Vue({
+      el: "#wrapper",
+      data() {
+        return {
+          imgList: this.fetchData(),
+        };
+      },
+      methods: {
+        fetchData() {
+          const result = [];
+
+          for (let i = 0; i < 50; i++) {
+            result.push({
+              _id: i,
+              src: `http://iph.href.lu/100x100?text=${i}`,
+              dataSrc:
+                "https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg",
+              width: 100,
+              height: 100,
+            });
+          }
+
+          return result;
+        },
+      },
+      mounted() {
+        const imgs = this.$refs.imgRef;
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.setAttribute(
+                  "src",
+                  entry.target.getAttribute("data-src")
+                );
+              }
+            });
+          },
+          {
+            threshold: 0.5,
+          }
+        );
+
+        imgs.forEach((v) => {
+          io.observe(v);
+        });
+      },
+    });
   </script>
 </html>
