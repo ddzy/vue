@@ -18,23 +18,35 @@
         padding: 0;
         list-style: none;
       }
+      #wrapper {
+        position: relative;
+        width: 800px;
+        margin: 0 auto;
+      }
       img {
-        display: block;
+        position: absolute;
+        transition: opacity 0.3s ease;
       }
     </style>
   </head>
   <body>
-    <div id="wrapper">
+    <div id="wrapper" ref="wrapperRef">
       <img
         v-for="v in imgList"
+        :class="{
+          [`img-${v._id}`]: true,
+        }"
         :src="v.src"
-        :data-src="v.dataSrc"
         :style="{
           width: `${v.width}px`,
-          height: `${v.height}px`,
+          left: `${v.left}px`,
+          top: `${v.top}px`,
+          opacity: v.opacity,
         }"
+        :data-index="v._id"
         alt=""
         ref="imgRef"
+        @load="imageLoaded"
       />
     </div>
   </body>
@@ -314,52 +326,135 @@
   </script>
   <script>
     // 懒加载
+    // const vm = new Vue({
+    //   el: "#wrapper",
+    //   data() {
+    //     return {
+    //       imgList: this.fetchData(),
+    //     };
+    //   },
+    //   methods: {
+    //     fetchData() {
+    //       const result = [];
+
+    //       for (let i = 0; i < 50; i++) {
+    //         result.push({
+    //           _id: i,
+    //           src: `http://iph.href.lu/100x100?text=${i}`,
+    //           dataSrc:
+    //             "https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg",
+    //           width: 100,
+    //           height: 100,
+    //         });
+    //       }
+
+    //       return result;
+    //     },
+    //   },
+    //   mounted() {
+    //     const imgs = this.$refs.imgRef;
+    //     const io = new IntersectionObserver(
+    //       (entries) => {
+    //         entries.forEach((entry) => {
+    //           if (entry.isIntersecting) {
+    //             entry.target.setAttribute(
+    //               "src",
+    //               entry.target.getAttribute("data-src")
+    //             );
+    //           }
+    //         });
+    //       },
+    //       {
+    //         threshold: 0.5,
+    //       }
+    //     );
+
+    //     imgs.forEach((v) => {
+    //       io.observe(v);
+    //     });
+    //   },
+    // });
+  </script>
+  <script>
+    // 瀑布流
     const vm = new Vue({
       el: "#wrapper",
       data() {
         return {
-          imgList: this.fetchData(),
+          imgList: [],
+          width: 150, // 固定宽度
+          gap: 10, // 间隔
+          columns: 1, // 列数
+          columnsHeight: [], // 存储每一列的高度
+          loadedImgCount: 0, // 记录当前已经加载完成的图片数量
         };
       },
       methods: {
         fetchData() {
-          const result = [];
+          const data = [];
 
           for (let i = 0; i < 50; i++) {
-            result.push({
+            const height = Math.floor(Math.random() * (400 - 100) + 100);
+            data.push({
               _id: i,
-              src: `http://iph.href.lu/100x100?text=${i}`,
-              dataSrc:
-                "https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg",
-              width: 100,
-              height: 100,
+              src: `http://iph.href.lu/${this.width}x${height}?text=${i}`,
+              width: this.width,
+              height: 0,
+              left: 0,
+              top: 0,
+              opacity: 0,
             });
           }
 
-          return result;
+          return data;
+        },
+        imageLoaded(e) {
+          this.loadedImgCount += 1;
+
+          const img = e.target;
+          const imgRect = img.getBoundingClientRect();
+          const imgIndex = +img.dataset.index;
+
+          // 第一行
+          if (this.loadedImgCount <= this.columns) {
+            this.$set(this.imgList, imgIndex, {
+              ...this.imgList[imgIndex],
+              height: imgRect.height,
+              top: this.gap,
+              left: (this.width + this.gap) * (this.loadedImgCount - 1),
+              opacity: 1,
+            });
+            this.columnsHeight[this.loadedImgCount - 1] =
+              this.gap + imgRect.height;
+          } else {
+            // 其余行
+            // 寻找最短的一列插入
+            const minColumnHeight = Math.min(...this.columnsHeight);
+            const minColumnIndex = this.columnsHeight.findIndex(
+              (v) => v === minColumnHeight
+            );
+
+            this.$set(this.imgList, imgIndex, {
+              ...this.imgList[imgIndex],
+              height: imgRect.height,
+              top: this.gap + minColumnHeight,
+              left: (this.width + this.gap) * minColumnIndex,
+              opacity: 1,
+            });
+            this.columnsHeight[minColumnIndex] += this.gap + imgRect.height;
+          }
         },
       },
+      created() {
+        const data = this.fetchData();
+        this.imgList = data;
+      },
       mounted() {
-        const imgs = this.$refs.imgRef;
-        const io = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.setAttribute(
-                  "src",
-                  entry.target.getAttribute("data-src")
-                );
-              }
-            });
-          },
-          {
-            threshold: 0.5,
-          }
-        );
-
-        imgs.forEach((v) => {
-          io.observe(v);
-        });
+        // 计算列数
+        const wrapper = this.$refs.wrapperRef;
+        const wrapperClientWidth = wrapper.clientWidth;
+        this.columns = Math.floor(wrapperClientWidth / (this.width + this.gap));
+        this.columnsHeight = new Array(this.columns).fill(0);
       },
     });
   </script>
