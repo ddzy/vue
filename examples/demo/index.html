@@ -30,74 +30,60 @@
     </style>
   </head>
   <body>
-    <div id="wrapper" ref="wrapperRef">
-      <img
-        v-for="v in imgList"
-        :class="{
-          [`img-${v._id}`]: true,
-        }"
-        :src="v.src"
-        :style="{
-          width: `${v.width}px`,
-          left: `${v.left}px`,
-          top: `${v.top}px`,
-          opacity: v.opacity,
-        }"
-        :data-index="v._id"
-        alt=""
-        ref="imgRef"
-        @load="imageLoaded"
-      />
-    </div>
+    <div id="app"></div>
+
+    <template id="appComponent">
+      <div v-if="flag"></div>
+    </template>
   </body>
   <script>
-    // const AppComponent = Vue.component("AppComponent", {
-    //   template: "#appComponent",
-    //   props: {
-    //     flag: {
-    //       type: Boolean,
-    //       required: true,
-    //     },
-    //   },
-    // });
-    // const AppComponent2 = Vue.component("AppComponent2", {
-    //   render(h) {
-    //     return h(
-    //       "div",
-    //       {
-    //         class: "app-2-container",
-    //       },
-    //       "5678"
-    //     );
-    //   },
-    // });
-    // const app = new Vue({
-    //   el: "#app",
-    //   template: `
-    //     <div class="container">
-    //       <app-component :flag="flag"></app-component>
-    //       <button @click="flag = !flag">Toggle flag</button>
-    //     </div>
-    //   `,
-    //   components: {
-    //     AppComponent,
-    //   },
-    //   data() {
-    //     return {
-    //       firstName: "zhaoyang",
-    //       lastName: "duan",
-    //       flag: false,
-    //     };
-    //   },
-    //   computed: {
-    //     computedFlag() {
-    //       return this.flag ? 1 : 0;
-    //     },
-    //     computedName() {
-    //       return `${this.lastName} ${this.firstName}`;
-    //     },
-    //   },
-    // });
+    const AppComponent = Vue.component("AppComponent", {
+      template: "#appComponent",
+      props: {
+        flag: {
+          type: Boolean,
+          required: true,
+        },
+      },
+    });
+    const AppComponent2 = Vue.component("AppComponent2", {
+      render(h) {
+        return h(
+          "div",
+          {
+            class: "app-2-container",
+          },
+          "5678"
+        );
+      },
+    });
+    const app = new Vue({
+      el: "#app",
+      template: `
+        <div class="container">
+          <app-component :flag="flag"></app-component>
+          <button @click="flag = !flag">Toggle flag</button>
+        </div>
+      `,
+      components: {
+        AppComponent,
+      },
+      data() {
+        return {
+          firstName: "zhaoyang",
+          lastName: "duan",
+          flag: false,
+        };
+      },
+      computed: {
+        computedFlag() {
+          return this.flag ? 1 : 0;
+        },
+        computedName() {
+          return `${this.lastName} ${this.firstName}`;
+        },
+      },
+    });
   </script>
   <script>
     // const vm = new Vue({
@@ -377,85 +363,132 @@
   </script>
   <script>
     // 瀑布流
-    const vm = new Vue({
-      el: "#wrapper",
-      data() {
-        return {
-          imgList: [],
-          width: 150, // 固定宽度
-          gap: 10, // 间隔
-          columns: 1, // 列数
-          columnsHeight: [], // 存储每一列的高度
-          loadedImgCount: 0, // 记录当前已经加载完成的图片数量
-        };
-      },
-      methods: {
-        fetchData() {
-          const data = [];
+    // const vm = new Vue({
+    //   el: "#wrapper",
+    //   data() {
+    //     return {
+    //       imgList: [],
+    //       width: 150, // 固定宽度
+    //       gap: 10, // 间隔
+    //       columns: 1, // 列数
+    //       columnsHeight: [], // 存储每一列的高度
+    //       loadedImgCount: 0, // 记录当前已经加载完成的图片数量
+    //     };
+    //   },
+    //   methods: {
+    //     fetchData() {
+    //       const data = [];
 
-          for (let i = 0; i < 50; i++) {
-            const height = Math.floor(Math.random() * (400 - 100) + 100);
-            data.push({
-              _id: i,
-              src: `http://iph.href.lu/${this.width}x${height}?text=${i}`,
-              width: this.width,
-              height: 0,
-              left: 0,
-              top: 0,
-              opacity: 0,
+    //       for (let i = 0; i < 50; i++) {
+    //         const height = Math.floor(Math.random() * (400 - 100) + 100);
+    //         data.push({
+    //           _id: i,
+    //           src: `http://iph.href.lu/${this.width}x${height}?text=${i}`,
+    //           width: this.width,
+    //           height: 0,
+    //           left: 0,
+    //           top: 0,
+    //           opacity: 0,
+    //         });
+    //       }
+
+    //       return data;
+    //     },
+    //     imageLoaded(e) {
+    //       this.loadedImgCount += 1;
+
+    //       const img = e.target;
+    //       const imgRect = img.getBoundingClientRect();
+    //       const imgIndex = +img.dataset.index;
+
+    //       // 第一行
+    //       if (this.loadedImgCount <= this.columns) {
+    //         this.$set(this.imgList, imgIndex, {
+    //           ...this.imgList[imgIndex],
+    //           height: imgRect.height,
+    //           top: this.gap,
+    //           left: (this.width + this.gap) * (this.loadedImgCount - 1),
+    //           opacity: 1,
+    //         });
+    //         this.columnsHeight[this.loadedImgCount - 1] =
+    //           this.gap + imgRect.height;
+    //       } else {
+    //         // 其余行
+    //         // 寻找最短的一列插入
+    //         const minColumnHeight = Math.min(...this.columnsHeight);
+    //         const minColumnIndex = this.columnsHeight.findIndex(
+    //           (v) => v === minColumnHeight
+    //         );
+
+    //         this.$set(this.imgList, imgIndex, {
+    //           ...this.imgList[imgIndex],
+    //           height: imgRect.height,
+    //           top: this.gap + minColumnHeight,
+    //           left: (this.width + this.gap) * minColumnIndex,
+    //           opacity: 1,
+    //         });
+    //         this.columnsHeight[minColumnIndex] += this.gap + imgRect.height;
+    //       }
+    //     },
+    //   },
+    //   created() {
+    //     const data = this.fetchData();
+    //     this.imgList = data;
+    //   },
+    //   mounted() {
+    //     // 计算列数
+    //     const wrapper = this.$refs.wrapperRef;
+    //     const wrapperClientWidth = wrapper.clientWidth;
+    //     this.columns = Math.floor(wrapperClientWidth / (this.width + this.gap));
+    //     this.columnsHeight = new Array(this.columns).fill(0);
+    //   },
+    // });
+  </script>
+  <script>
+    class _Promise {
+      static resolve(value) {
+        return new _Promise(function (resolve) {
+          resolve(value);
+        });
+      }
+
+      _resolve(value) {
+        // 浏览器无法模拟微任务，所以使用宏任务代替，目的是为了在 then 方法成功注册回调之后再执行
+        setTimeout(() => {
+          this.value = value;
+          this.status = "fulfilled";
+          this.callbacks.forEach((o) =>
+            o.nextResolve(o.onFulfilled(this.value))
+          );
+        }, 0);
+      }
+
+      constructor(callback) {
+        callback(this._resolve.bind(this));
+      }
+
+      status = "pending";
+      value = undefined;
+      error = undefined;
+      // 存储 then 回调，解决非链式调用的情况（p.then1; p.then2）
+      callbacks = [];
+
+      then(onFulfilled) {
+        // 链式调用（p.then.then）
+        return new _Promise((nextResolve) => {
+          // 如果暂时没有异步的结果，那么插入到回调队列
+          if (this.status === "pending") {
+            this.callbacks.push({
+              onFulfilled,
+              nextResolve,
             });
+          } else if (this.status === "fulfilled") {
+            // 如果已经有结果，那么直接执行回调
+            // 并且下一个 then 的参数需要依赖于当前回调的执行结果
+            nextResolve(onFulfilled(this.value));
           }
-
-          return data;
-        },
-        imageLoaded(e) {
-          this.loadedImgCount += 1;
-
-          const img = e.target;
-          const imgRect = img.getBoundingClientRect();
-          const imgIndex = +img.dataset.index;
-
-          // 第一行
-          if (this.loadedImgCount <= this.columns) {
-            this.$set(this.imgList, imgIndex, {
-              ...this.imgList[imgIndex],
-              height: imgRect.height,
-              top: this.gap,
-              left: (this.width + this.gap) * (this.loadedImgCount - 1),
-              opacity: 1,
-            });
-            this.columnsHeight[this.loadedImgCount - 1] =
-              this.gap + imgRect.height;
-          } else {
-            // 其余行
-            // 寻找最短的一列插入
-            const minColumnHeight = Math.min(...this.columnsHeight);
-            const minColumnIndex = this.columnsHeight.findIndex(
-              (v) => v === minColumnHeight
-            );
-
-            this.$set(this.imgList, imgIndex, {
-              ...this.imgList[imgIndex],
-              height: imgRect.height,
-              top: this.gap + minColumnHeight,
-              left: (this.width + this.gap) * minColumnIndex,
-              opacity: 1,
-            });
-            this.columnsHeight[minColumnIndex] += this.gap + imgRect.height;
-          }
-        },
-      },
-      created() {
-        const data = this.fetchData();
-        this.imgList = data;
-      },
-      mounted() {
-        // 计算列数
-        const wrapper = this.$refs.wrapperRef;
-        const wrapperClientWidth = wrapper.clientWidth;
-        this.columns = Math.floor(wrapperClientWidth / (this.width + this.gap));
-        this.columnsHeight = new Array(this.columns).fill(0);
-      },
-    });
+        });
+      }
+    }
   </script>
 </html>
