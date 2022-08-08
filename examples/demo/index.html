@@ -451,20 +451,61 @@
           resolve(value);
         });
       }
+      static reject(error) {
+        return new _Promise(function (resolve, reject) {
+          reject(error);
+        });
+      }
 
       _resolve(value) {
-        // 浏览器无法模拟微任务，所以使用宏任务代替，目的是为了在 then 方法成功注册回调之后再执行
-        setTimeout(() => {
-          this.value = value;
-          this.status = "fulfilled";
-          this.callbacks.forEach((o) =>
-            o.nextResolve(o.onFulfilled(this.value))
-          );
-        }, 0);
+        // 浏览器无法模拟微任务，所以使用Promise代替，目的是为了在 then 方法成功注册回调之后再执行
+        Promise.resolve().then(() => {
+          if (this.status === "pending") {
+            this.value = value;
+            this.status = "fulfilled";
+            this.callbacks.forEach((o) => {
+              let res;
+              try {
+                // 如果已经有结果，那么直接执行回调
+                // 并且下一个 then 的参数需要依赖于当前回调的执行结果
+                res = o.onFulfilled(this.value);
+                o.nextResolve(res);
+              } catch (error) {
+                o.nextReject(error);
+              }
+            });
+          }
+        });
+      }
+
+      _reject(error) {
+        Promise.resolve().then(() => {
+          if (this.status === "pending") {
+            this.error = error;
+            this.status = "rejected";
+            this.callbacks.forEach((o) => {
+              if (typeof o.onRejected === "function") {
+                try {
+                  let res = o.onRejected(this.error);
+                  o.nextResolve(res);
+                } catch (e) {
+                  o.nextReject(e);
+                }
+              } else {
+                throw new Error(`Uncaught promise ${error}`);
+              }
+            });
+          }
+        });
       }
 
       constructor(callback) {
-        callback(this._resolve.bind(this));
+        try {
+          callback(this._resolve.bind(this), this._reject.bind(this));
+        } catch (error) {
+          this.error = error;
+          this.status = "rejected";
+        }
       }
 
       status = "pending";
@@ -473,22 +514,71 @@
       // 存储 then 回调，解决非链式调用的情况（p.then1; p.then2）
       callbacks = [];
 
-      then(onFulfilled) {
+      then(onFulfilled, onRejected) {
         // 链式调用（p.then.then）
-        return new _Promise((nextResolve) => {
+        return new _Promise((nextResolve, nextReject) => {
           // 如果暂时没有异步的结果，那么插入到回调队列
           if (this.status === "pending") {
             this.callbacks.push({
               onFulfilled,
+              onRejected,
               nextResolve,
+              nextReject,
             });
-          } else if (this.status === "fulfilled") {
-            // 如果已经有结果，那么直接执行回调
-            // 并且下一个 then 的参数需要依赖于当前回调的执行结果
-            nextResolve(onFulfilled(this.value));
+          } else if (
+            this.status === "fulfilled" &&
+            typeof onFulfilled === "function"
+          ) {
+            let res;
+            try {
+              // 如果已经有结果，那么直接执行回调
+              // 并且下一个 then 的参数需要依赖于当前回调的执行结果
+              res = onFulfilled(this.value);
+              nextResolve(res);
+            } catch (error) {
+              if (typeof onRejected === "function") {
+                onRejected(error);
+              } else {
+                nextReject(error);
+              }
+            }
+          } else if (this.status === "rejected") {
+            if (typeof onRejected === "function") {
+              onRejected(this.error);
+            } else {
+              nextReject(this.error);
+            }
           }
         });
       }
+
+      catch(onRejected) {
+        return this.then(null, onRejected);
+      }
     }
+
+    const p = new Promise((resolve, reject) => {
+      reject(1);
+    });
+
+    // p.then((r1) => {
+    //   console.log("r1 :>> ", r1);
+    //   throw 2;
+    // }).then((r2) => {
+    //   console.log("r2 :>> ", r2);
+    // });
+
+    p.then(
+      (r1) => {
+        console.log("r1 :>> ", r1);
+        throw 2;
+      },
+      (e2) => {
+        console.log("e2 :>> ", e2);
+        throw 4;
+      }
+    ).then((e1) => {
+      console.log("e1 :>> ", e1);
+    });
   </script>
 </html>
