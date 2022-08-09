@@ -546,23 +546,35 @@
             this.status = "rejected";
             this.exception = error;
 
-            this.rejectList.forEach((v) => {
-              let res;
-              try {
-                let res = v.onRejected(this.value);
-                v.nextResolve(res);
-              } catch (e) {
-                // 如果在执行 .catch 回调的时候捕获到错误
-                v.nextReject(e);
+            // 如果当前 Promise 上注册的 onRejected/catch 回调为空，那么待抛出的错误信息需要往下传递
+            if (!this.rejectList.length) {
+              if (this.resolveList.length) {
+                this.resolveList.forEach((v) => {
+                  v.nextReject(this.exception);
+                });
+                // 重置当前的错误信息，因为错误已经传递给 then 回调里面的 Promise 了，所以当前 Promise 无需再抛出错误
+                this.exception = undefined;
               }
-            });
+            } else {
+              // 如果当前 Promise 上已经注册了 onRejected/catch 回调，那么
+              this.rejectList.forEach((v) => {
+                let res;
+                try {
+                  let res = v.onRejected(this.value);
+                  v.nextResolve(res);
+                } catch (e) {
+                  // 如果在执行 onRejected/catch 回调的时候捕获到错误
+                  v.nextReject(e);
+                }
+              });
+            }
           }
         });
       }
 
       then(onFulfilled, onRejected) {
         // 链式调用（p.then.then）
-        return new _Promise((nextResolve, nextReject) => {
+        let p = new _Promise((nextResolve, nextReject) => {
           // 执行 then 方法的时候，如果此时 promise 还没有返回值
           // 那么分别将回调加入到队列中，等待 resolve/reject 时执行
           if (this.status === "pending") {
@@ -595,6 +607,10 @@
             }
           }
         });
+
+        p.exception = this.exception;
+
+        return p;
       }
 
       catch(onRejected) {
@@ -602,28 +618,38 @@
       }
     }
 
-    let promise1 = new _Promise((resolve) => {
-      setTimeout(() => {
-        resolve(1);
-      }, 1000);
-    });
-    let promise2 = new _Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(2);
-      }, 500);
-    });
-    let promise3 = new _Promise((resolve, reject) => {
-      resolve(3);
-    });
-    let promise4 = 4;
+    // let promise1 = new _Promise((resolve) => {
+    //   setTimeout(() => {
+    //     resolve(1);
+    //   }, 1000);
+    // });
+    // let promise2 = new _Promise((resolve, reject) => {
+    //   setTimeout(() => {
+    //     resolve(2);
+    //   }, 500);
+    // });
+    // let promise3 = new _Promise((resolve, reject) => {
+    //   reject(3);
+    // });
+    // let promise4 = 4;
 
-    _Promise.all([promise1, promise2, promise3, promise4]).then(
-      (res) => {
-        console.log("res :>> ", res);
-      },
-      (err) => {
-        console.log("err :>> ", err);
-      }
-    );
+    // _Promise
+    //   .all([promise1, promise2, promise3, promise4])
+    //   .then((res) => {
+    //     console.log("res :>> ", res);
+    //   })
+    //   .catch((err) => {
+    //     console.log("err :>> ", err);
+    //   });
+
+    let p1 = new _Promise((resolve, reject) => {
+      reject(1);
+    })
+      .catch((a) => {
+        console.log("a :>> ", a);
+      })
+      .then(() => {
+        console.log("1 :>> ", 1);
+      });
   </script>
 </html>
