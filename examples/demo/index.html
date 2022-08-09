@@ -463,6 +463,18 @@
         }, 0);
       }
 
+      static resolve(value) {
+        return new this((resolve) => {
+          resolve(value);
+        });
+      }
+
+      static reject(error) {
+        return new this((resolve, reject) => {
+          reject(error);
+        });
+      }
+
       status = "pending";
       value = undefined;
       // 存储异常信息，便于直接抛出异常（Uncaught in promise xxx）
@@ -554,31 +566,16 @@
       }
     }
 
-    const p = new _Promise((resolve, reject) => {
-      reject(1);
+    _Promise.resolve(1).then((res) => {
+      console.log("res :>> ", res);
     });
-
-    p.then(
-      (s1) => {
-        console.log("s1 :>> ", s1);
-        return 22;
+    _Promise.reject(2).then(
+      (err) => {
+        console.log("err :>> ", err);
       },
-      (e1) => {
-        console.log("e1 :>> ", e1);
-        return 11;
+      (err1) => {
+        console.log("err1 :>> ", err1);
       }
-    ).then((s11) => {
-      console.log("s11 :>> ", s11);
-    });
-    p.then((s2) => {
-      console.log("s2 :>> ", s2);
-    });
-
-    // .catch(() => {
-    //   return 3;
-    // })
-    // .then(() => {
-    //   console.log("4 :>> ", 4);
-    // });
+    );
   </script>
 </html>
