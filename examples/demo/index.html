@@ -476,6 +476,7 @@
       }
 
       static all(promiseList) {
+        // 返回值的顺序和传入的 Promise 顺序相同；但是只要有一个 Promise rejected，那么就返回这个错误信息
         const result = [];
         let isExit = false;
         let count = 0;
@@ -502,6 +503,36 @@
                 if (count === promiseList.length) {
                   resolve(result);
                 }
+              }).catch((err) => {
+                isExit = true;
+                reject(err);
+              });
+            }
+          }
+        });
+      }
+
+      static race(promiseList) {
+        // 返回最早的 Promise 的结果，无论成功还是失败
+        let isExit = false;
+
+        return new this((resolve, reject) => {
+          for (let i = 0; i < promiseList.length; i++) {
+            const v = promiseList[i];
+            // 只要某一个 promise 有了结果，则终止循环
+            if (isExit) {
+              break;
+            }
+            // 如果是基本值
+            if (!(v instanceof this)) {
+              isExit = true;
+              resolve(v);
+              break;
+            } else {
+              // 如果是 Promise 实例
+              v.then((res) => {
+                isExit = true;
+                resolve(res);
               }).catch((err) => {
                 isExit = true;
                 reject(err);
@@ -640,19 +671,17 @@
       }, 500);
     });
     let promise3 = new _Promise((resolve, reject) => {
-      reject(3);
+      resolve(3);
     });
     let promise4 = 4;
 
-    _Promise
-      .all([promise1, promise2, promise3, promise4])
-      .then((res) => {
+    _Promise.race([promise1, promise2, promise3]).then(
+      (res) => {
         console.log("res :>> ", res);
-      }, (err) => {
-        console.log('1 :>> ', 1);
-      })
-      .catch((err) => {
+      },
+      (err) => {
         console.log("err :>> ", err);
-      });
+      }
+    );
   </script>
 </html>
