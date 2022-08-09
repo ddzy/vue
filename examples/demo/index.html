@@ -458,36 +458,58 @@
         setTimeout(() => {
           if (this.exception !== undefined && !this.rejectList.length) {
             // 如果没有定义 catch 回调，那么直接抛出异常
-            throw new Error(`Uncaught promise: ${this.exception}`);
+            throw new Error(`Uncaught in promise: ${this.exception}`);
           }
         }, 0);
       }
 
       status = "pending";
       value = undefined;
+      // 存储异常信息，便于直接抛出异常（Uncaught in promise xxx）
       exception = undefined;
       // 存储 then/reject 回调，解决非链式调用的情况（p.then1; p.then2）
       resolveList = [];
       rejectList = [];
 
       _resolve(value) {
-        // 浏览器无法模拟微任务，所以使用setTimeout代替，目的是为了在 then 方法成功注册回调之后再执行
-        setTimeout(() => {
+        // 浏览器无法模拟微任务，所以使用Promise代替，目的是为了在 then 方法成功注册回调之后再执行
+        Promise.resolve().then(() => {
           if (this.status === "pending") {
             this.value = value;
             this.status = "fulfilled";
+            this.resolveList.forEach((v) => {
+              let res;
+              try {
+                res = v.onFulfilled(this.value);
+                v.nextResolve(res);
+              } catch (e) {
+                // 如果在执行 .then 回调的时候捕获到错误
+                v.nextReject(e);
+              }
+            });
           }
-        }, 0);
+        });
       }
 
       _reject(error) {
-        setTimeout(() => {
+        Promise.resolve().then(() => {
           if (this.status === "pending") {
             this.value = error;
             this.status = "rejected";
             this.exception = error;
+
+            this.rejectList.forEach((v) => {
+              let res;
+              try {
+                let res = v.onRejected(this.value);
+                v.nextResolve(res);
+              } catch (e) {
+                // 如果在执行 .catch 回调的时候捕获到错误
+                v.nextReject(e);
+              }
+            });
           }
-        }, 0);
+        });
       }
 
       then(onFulfilled, onRejected) {
@@ -497,16 +519,18 @@
           // 那么分别将回调加入到队列中，等待 resolve/reject 时执行
           if (this.status === "pending") {
             if (onFulfilled) {
-              this.resolveList.push(() => {
-                let res = onFulfilled(this.value);
-                nextResolve(res);
+              this.resolveList.push({
+                onFulfilled,
+                nextResolve,
+                nextReject,
               });
             }
             if (onRejected) {
               this.exception = undefined;
-              this.rejectList.push(() => {
-                let res = onRejected(this.value);
-                nextResolve(res);
+              this.rejectList.push({
+                onRejected,
+                nextResolve,
+                nextReject,
               });
             }
           } else if (this.status === "fulfilled") {
@@ -534,9 +558,22 @@
       reject(1);
     });
 
-    p.catch((r1) => {
-      console.log("r1 :>> ", r1);
+    p.then(
+      (s1) => {
+        console.log("s1 :>> ", s1);
+        return 22;
+      },
+      (e1) => {
+        console.log("e1 :>> ", e1);
+        return 11;
+      }
+    ).then((s11) => {
+      console.log("s11 :>> ", s11);
     });
+    p.then((s2) => {
+      console.log("s2 :>> ", s2);
+    });
+
     // .catch(() => {
     //   return 3;
     // })
