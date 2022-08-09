@@ -478,6 +478,7 @@
       static all(promiseList) {
         const result = [];
         let isExit = false;
+        let count = 0;
 
         return new this((resolve, reject) => {
           for (let i = 0; i < promiseList.length; i++) {
@@ -490,12 +491,15 @@
             // 如果是基本值
             if (!(v instanceof this)) {
               result[i] = v;
+              count += 1;
             } else {
               // 如果是 Promise 实例
               v.then((res) => {
                 // 多个 Promise 是依次执行的，无需等待，但是返回值的顺序还是按照传入的顺序
                 result[i] = res;
-                if (result.length === promiseList.length) {
+                count += 1;
+
+                if (count === promiseList.length) {
                   resolve(result);
                 }
               }).catch((err) => {
@@ -599,16 +603,14 @@
     }
 
     let promise1 = new _Promise((resolve) => {
-      // setTimeout(() => {
-      //   resolve(1);
-      // }, 1000);
-      resolve(1);
+      setTimeout(() => {
+        resolve(1);
+      }, 1000);
     });
     let promise2 = new _Promise((resolve, reject) => {
-      // setTimeout(() => {
-      //   resolve(2);
-      // }, 500);
-      resolve(2);
+      setTimeout(() => {
+        resolve(2);
+      }, 500);
     });
     let promise3 = new _Promise((resolve, reject) => {
       resolve(3);
