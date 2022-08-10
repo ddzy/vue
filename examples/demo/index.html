@@ -35,6 +35,17 @@
     <template id="appComponent">
       <div v-if="flag"></div>
     </template>
+
+    <div id="router-demo">
+      <div>
+        <a class="router-item" data-path="/home">/home</a>
+        <a class="router-item" data-path="/about">/about</a>
+        <a class="router-item" data-path="/category">/category</a>
+      </div>
+      <button onclick="router.go(-1)">go</button>
+      <button onclick="router.forward()">forward</button>
+      <button onclick="router.back()">back</button>
+    </div>
   </body>
   <script>
     const AppComponent = Vue.component("AppComponent", {
@@ -685,16 +696,74 @@
   <script>
     class Router {
       static createHashRouter(options) {
+        function getPath() {
+          return location.hash.replace(/^#/, "");
+        }
+        const path = getPath();
+        const stack = [];
+
+        if (path) {
+          stack.push(path);
+        }
+
         return {
-          push(ops, cb) {
+          // 历史记录栈
+          stack,
+          // 当前路径对应栈中的下标
+          currentIndex: 0,
+          push(ops, cb, isGo) {
+            // 路径相同则不入栈
+            const currentPath = this.getPath();
+            if (currentPath === ops.path) {
+              return;
+            }
             location.hash = `${ops.path}`;
-            cb && cb();
+            // 如果是通过 router.go() 跳转的，则不添加历史记录到栈
+            if (!isGo) {
+              this.stack.push(ops.path);
+              this.currentIndex = this.stack.length - 1;
+            }
+            cb && cb(ops.path);
           },
           register(cb) {
             window.addEventListener("hashchange", cb);
           },
-          getPath() {
-            return location.hash.replace(/^#/, "");
+          getPath,
+          go(num, cb) {
+            let stackLength = this.stack.length;
+
+            if (!stackLength || num === 0) {
+              return;
+            }
+
+            // 边界处理
+            let i = this.currentIndex;
+            let count = 0;
+            if (num > 0) {
+              while (i <= stackLength - 1 && count <= num - 1) {
+                i++;
+                count++;
+              }
+            } else if (num < 0) {
+              num = Math.abs(num);
+              while (i >= 0 && count <= num - 1) {
+                i--;
+                count++;
+              }
+            }
+
+            // 不能超出历史记录
+            i = Math.min(stackLength - 1, i);
+            i = Math.max(0, i);
+
+            this.push(
+              {
+                path: this.stack[i],
+              },
+              cb,
+              true
+            );
+            this.currentIndex = i;
           },
         };
       }
@@ -747,15 +816,26 @@
       }
 
       push(ops) {
-        this.router.push(ops, () => {
-          this.currentRoute =
-            this.routes.find((v) => v.path === ops.path) || null;
+        this.router.push(ops, (path) => {
+          this.currentRoute = this.routes.find((v) => v.path === path) || null;
         });
       }
 
       hasRoute() {}
 
-      go() {}
+      go(num) {
+        this.router.go(num, (path) => {
+          this.currentRoute = this.routes.find((v) => v.path === path) || null;
+        });
+      }
+
+      back() {
+        this.go(-1);
+      }
+
+      forward() {
+        this.go(1);
+      }
 
       replace() {}
 
@@ -817,8 +897,20 @@
     router.depend((route) => {
       console.log("route :>> ", route);
     });
-    router.push({
-      path: "/home",
-    });
+
+    const routerItems = document.querySelectorAll(".router-item");
+    routerItems.forEach((v) =>
+      v.addEventListener("click", handleLinkClick, false)
+    );
+
+    function handleLinkClick(e) {
+      if (e) {
+        const target = e.target;
+        const path = target.dataset.path;
+        router.push({
+          path,
+        });
+      }
+    }
   </script>
 </html>
