@@ -445,241 +445,380 @@
     // });
   </script>
   <script>
-    class _Promise {
-      constructor(callback) {
-        try {
-          callback(this._resolve.bind(this), this._reject.bind(this));
-        } catch (error) {
-          this.exception = error;
-          this._reject(error);
+    // class _Promise {
+    //   constructor(callback) {
+    //     try {
+    //       callback(this._resolve.bind(this), this._reject.bind(this));
+    //     } catch (error) {
+    //       this.exception = error;
+    //       this._reject(error);
+    //     }
+
+    //     // 等待主线程收集完所有的 then/catch 回调之后，再决定是否直接抛出异常
+    //     setTimeout(() => {
+    //       if (this.exception !== undefined && !this.rejectList.length) {
+    //         // 如果没有定义 catch 回调，那么直接抛出异常
+    //         throw new Error(`Uncaught in promise: ${this.exception}`);
+    //       }
+    //     }, 0);
+    //   }
+
+    //   static resolve(value) {
+    //     return new this((resolve) => {
+    //       resolve(value);
+    //     });
+    //   }
+
+    //   static reject(error) {
+    //     return new this((resolve, reject) => {
+    //       reject(error);
+    //     });
+    //   }
+
+    //   static all(promiseList) {
+    //     // 返回值的顺序和传入的 Promise 顺序相同；但是只要有一个 Promise rejected，那么就返回这个错误信息
+    //     const result = [];
+    //     let isExit = false;
+    //     let count = 0;
+
+    //     return new this((resolve, reject) => {
+    //       for (let i = 0; i < promiseList.length; i++) {
+    //         const v = promiseList[i];
+
+    //         // 只要有一个 promise 为 rejected，那么直接终止循环
+    //         if (isExit) {
+    //           break;
+    //         }
+    //         // 如果是基本值
+    //         if (!(v instanceof this)) {
+    //           result[i] = v;
+    //           count += 1;
+    //         } else {
+    //           // 如果是 Promise 实例
+    //           v.then((res) => {
+    //             // 多个 Promise 是依次执行的，无需等待，但是返回值的顺序还是按照传入的顺序
+    //             result[i] = res;
+    //             count += 1;
+
+    //             if (count === promiseList.length) {
+    //               resolve(result);
+    //             }
+    //           }).catch((err) => {
+    //             isExit = true;
+    //             reject(err);
+    //           });
+    //         }
+    //       }
+    //     });
+    //   }
+
+    //   static race(promiseList) {
+    //     // 返回最早的 Promise 的结果，无论成功还是失败
+    //     let isExit = false;
+
+    //     return new this((resolve, reject) => {
+    //       for (let i = 0; i < promiseList.length; i++) {
+    //         const v = promiseList[i];
+    //         // 只要某一个 promise 有了结果，则终止循环
+    //         if (isExit) {
+    //           break;
+    //         }
+    //         // 如果是基本值
+    //         if (!(v instanceof this)) {
+    //           isExit = true;
+    //           resolve(v);
+    //           break;
+    //         } else {
+    //           // 如果是 Promise 实例
+    //           v.then((res) => {
+    //             isExit = true;
+    //             resolve(res);
+    //           }).catch((err) => {
+    //             isExit = true;
+    //             reject(err);
+    //           });
+    //         }
+    //       }
+    //     });
+    //   }
+
+    //   status = "pending";
+    //   value = undefined;
+    //   // 存储异常信息，便于直接抛出异常（Uncaught in promise xxx）
+    //   exception = undefined;
+    //   // 存储 then/reject 回调，解决非链式调用的情况（p.then1; p.then2）
+    //   resolveList = [];
+    //   rejectList = [];
+
+    //   _resolve(value) {
+    //     // 浏览器无法模拟微任务，所以使用Promise代替，目的是为了在 then 方法成功注册回调之后再执行
+    //     Promise.resolve().then(() => {
+    //       if (this.status === "pending") {
+    //         this.value = value;
+    //         this.status = "fulfilled";
+
+    //         // 如果当前 Promise 上注册的 onFulfilled/then 回调为空，那么值需要往下传递
+    //         if (!this.resolveList.length) {
+    //           if (this.rejectList.length) {
+    //             this.rejectList.forEach((v) => {
+    //               v.nextResolve(this.value);
+    //             });
+    //           }
+    //         } else {
+    //           // 如果当前 Promise 上已经注册了 onFulfilled/then 回调
+    //           this.resolveList.forEach((v) => {
+    //             let res;
+    //             try {
+    //               res = v.onFulfilled(this.value);
+    //               v.nextResolve(res);
+    //             } catch (e) {
+    //               // 如果在执行 .then 回调的时候捕获到错误
+    //               v.nextReject(e);
+    //             }
+    //           });
+    //         }
+    //       }
+    //     });
+    //   }
+
+    //   _reject(error) {
+    //     Promise.resolve().then(() => {
+    //       if (this.status === "pending") {
+    //         this.value = error;
+    //         this.status = "rejected";
+    //         this.exception = error;
+
+    //         // 如果当前 Promise 上注册的 onRejected/catch 回调为空，那么待抛出的错误信息需要往下传递
+    //         if (!this.rejectList.length) {
+    //           if (this.resolveList.length) {
+    //             this.resolveList.forEach((v) => {
+    //               v.nextReject(this.exception);
+    //             });
+    //             // 重置当前的错误信息，因为错误已经传递给 then 回调里面的 Promise 了，所以当前 Promise 无需再抛出错误
+    //             this.exception = undefined;
+    //           }
+    //         } else {
+    //           // 如果当前 Promise 上已经注册了 onRejected/catch 回调
+    //           this.rejectList.forEach((v) => {
+    //             let res;
+    //             try {
+    //               let res = v.onRejected(this.value);
+    //               v.nextResolve(res);
+    //             } catch (e) {
+    //               // 如果在执行 onRejected/catch 回调的时候捕获到错误
+    //               v.nextReject(e);
+    //             }
+    //           });
+    //         }
+    //       }
+    //     });
+    //   }
+
+    //   then(onFulfilled, onRejected) {
+    //     // 链式调用（p.then.then）
+    //     let p = new _Promise((nextResolve, nextReject) => {
+    //       // 执行 then 方法的时候，如果此时 promise 还没有返回值
+    //       // 那么分别将回调加入到队列中，等待 resolve/reject 时执行
+    //       if (this.status === "pending") {
+    //         if (onFulfilled) {
+    //           this.resolveList.push({
+    //             onFulfilled,
+    //             nextResolve,
+    //             nextReject,
+    //           });
+    //         }
+    //         if (onRejected) {
+    //           this.exception = undefined;
+    //           this.rejectList.push({
+    //             onRejected,
+    //             nextResolve,
+    //             nextReject,
+    //           });
+    //         }
+    //       } else if (this.status === "fulfilled") {
+    //         // 如果 promise 已经有返回值，直接调用回调
+    //         if (onFulfilled) {
+    //           let res = onFulfilled(this.value);
+    //           nextResolve(res);
+    //         }
+    //       } else if (this.status === "rejected") {
+    //         // 如果 promise 已经有返回值，直接调用回调
+    //         if (onRejected) {
+    //           let res = onRejected(this.value);
+    //           nextResolve(res);
+    //         }
+    //       }
+    //     });
+
+    //     return p;
+    //   }
+
+    //   catch(onRejected) {
+    //     return this.then(null, onRejected);
+    //   }
+    // }
+
+    // let promise1 = new _Promise((resolve) => {
+    //   setTimeout(() => {
+    //     resolve(1);
+    //   }, 1000);
+    // });
+    // let promise2 = new _Promise((resolve, reject) => {
+    //   setTimeout(() => {
+    //     resolve(2);
+    //   }, 500);
+    // });
+    // let promise3 = new _Promise((resolve, reject) => {
+    //   resolve(3);
+    // });
+    // let promise4 = 4;
+
+    // _Promise.race([promise1, promise2, promise3]).then(
+    //   (res) => {
+    //     console.log("res :>> ", res);
+    //   },
+    //   (err) => {
+    //     console.log("err :>> ", err);
+    //   }
+    // );
+  </script>
+  <script>
+    class Router {
+      static createHashRouter(options) {
+        return {
+          push(ops, cb) {
+            location.hash = `${ops.path}`;
+            cb && cb();
+          },
+          register(cb) {
+            window.addEventListener("hashchange", cb);
+          },
+          getPath() {
+            return location.hash.replace(/^#/, "");
+          },
+        };
+      }
+
+      constructor(options) {
+        for (const key in options) {
+          if (this.hasOwnProperty(key)) {
+            this[key] = options[key];
+          }
         }
 
-        // 等待主线程收集完所有的 then/catch 回调之后，再决定是否直接抛出异常
-        setTimeout(() => {
-          if (this.exception !== undefined && !this.rejectList.length) {
-            // 如果没有定义 catch 回调，那么直接抛出异常
-            throw new Error(`Uncaught in promise: ${this.exception}`);
+        switch (this.mode) {
+          case "hash": {
+            this.router = Router.createHashRouter({});
+            this.router.register(this.notify.bind(this));
+            break;
           }
-        }, 0);
+        }
+        this.routes = this.routes.map((route) => {
+          return new Route(route);
+        });
+        const currentPath = this.router.getPath();
+        this.currentRoute =
+          this.routes.find((route) => route.path === currentPath) || null;
       }
 
-      static resolve(value) {
-        return new this((resolve) => {
-          resolve(value);
+      mode = "hash";
+      routes = [];
+      // 当前路由
+      currentRoute = null;
+      router = null;
+      deps = [];
+
+      /**
+       * 注册回调，当路由发生变化时触发
+       **/
+      depend(cb) {
+        this.deps.push(cb);
+      }
+
+      /**
+       * 当路由变化时执行回调
+       **/
+      notify() {
+        this.deps.forEach((v) => v(this.currentRoute));
+      }
+
+      getRoutes() {
+        return this.routes;
+      }
+
+      push(ops) {
+        this.router.push(ops, () => {
+          this.currentRoute =
+            this.routes.find((v) => v.path === ops.path) || null;
         });
       }
 
-      static reject(error) {
-        return new this((resolve, reject) => {
-          reject(error);
-        });
-      }
+      hasRoute() {}
 
-      static all(promiseList) {
-        // 返回值的顺序和传入的 Promise 顺序相同；但是只要有一个 Promise rejected，那么就返回这个错误信息
-        const result = [];
-        let isExit = false;
-        let count = 0;
+      go() {}
 
-        return new this((resolve, reject) => {
-          for (let i = 0; i < promiseList.length; i++) {
-            const v = promiseList[i];
+      replace() {}
 
-            // 只要有一个 promise 为 rejected，那么直接终止循环
-            if (isExit) {
-              break;
-            }
-            // 如果是基本值
-            if (!(v instanceof this)) {
-              result[i] = v;
-              count += 1;
-            } else {
-              // 如果是 Promise 实例
-              v.then((res) => {
-                // 多个 Promise 是依次执行的，无需等待，但是返回值的顺序还是按照传入的顺序
-                result[i] = res;
-                count += 1;
-
-                if (count === promiseList.length) {
-                  resolve(result);
-                }
-              }).catch((err) => {
-                isExit = true;
-                reject(err);
-              });
-            }
+      beforeEach() {}
+    }
+    class Route {
+      constructor(options) {
+        for (const key in options) {
+          if (this.hasOwnProperty(key)) {
+            this[key] = options[key];
           }
-        });
+        }
       }
 
-      static race(promiseList) {
-        // 返回最早的 Promise 的结果，无论成功还是失败
-        let isExit = false;
-
-        return new this((resolve, reject) => {
-          for (let i = 0; i < promiseList.length; i++) {
-            const v = promiseList[i];
-            // 只要某一个 promise 有了结果，则终止循环
-            if (isExit) {
-              break;
-            }
-            // 如果是基本值
-            if (!(v instanceof this)) {
-              isExit = true;
-              resolve(v);
-              break;
-            } else {
-              // 如果是 Promise 实例
-              v.then((res) => {
-                isExit = true;
-                resolve(res);
-              }).catch((err) => {
-                isExit = true;
-                reject(err);
-              });
-            }
-          }
-        });
-      }
-
-      status = "pending";
-      value = undefined;
-      // 存储异常信息，便于直接抛出异常（Uncaught in promise xxx）
-      exception = undefined;
-      // 存储 then/reject 回调，解决非链式调用的情况（p.then1; p.then2）
-      resolveList = [];
-      rejectList = [];
-
-      _resolve(value) {
-        // 浏览器无法模拟微任务，所以使用Promise代替，目的是为了在 then 方法成功注册回调之后再执行
-        Promise.resolve().then(() => {
-          if (this.status === "pending") {
-            this.value = value;
-            this.status = "fulfilled";
-
-            // 如果当前 Promise 上注册的 onFulfilled/then 回调为空，那么值需要往下传递
-            if (!this.resolveList.length) {
-              if (this.rejectList.length) {
-                this.rejectList.forEach((v) => {
-                  v.nextResolve(this.value);
-                });
-              }
-            } else {
-              // 如果当前 Promise 上已经注册了 onFulfilled/then 回调
-              this.resolveList.forEach((v) => {
-                let res;
-                try {
-                  res = v.onFulfilled(this.value);
-                  v.nextResolve(res);
-                } catch (e) {
-                  // 如果在执行 .then 回调的时候捕获到错误
-                  v.nextReject(e);
-                }
-              });
-            }
-          }
-        });
-      }
-
-      _reject(error) {
-        Promise.resolve().then(() => {
-          if (this.status === "pending") {
-            this.value = error;
-            this.status = "rejected";
-            this.exception = error;
-
-            // 如果当前 Promise 上注册的 onRejected/catch 回调为空，那么待抛出的错误信息需要往下传递
-            if (!this.rejectList.length) {
-              if (this.resolveList.length) {
-                this.resolveList.forEach((v) => {
-                  v.nextReject(this.exception);
-                });
-                // 重置当前的错误信息，因为错误已经传递给 then 回调里面的 Promise 了，所以当前 Promise 无需再抛出错误
-                this.exception = undefined;
-              }
-            } else {
-              // 如果当前 Promise 上已经注册了 onRejected/catch 回调
-              this.rejectList.forEach((v) => {
-                let res;
-                try {
-                  let res = v.onRejected(this.value);
-                  v.nextResolve(res);
-                } catch (e) {
-                  // 如果在执行 onRejected/catch 回调的时候捕获到错误
-                  v.nextReject(e);
-                }
-              });
-            }
-          }
-        });
-      }
-
-      then(onFulfilled, onRejected) {
-        // 链式调用（p.then.then）
-        let p = new _Promise((nextResolve, nextReject) => {
-          // 执行 then 方法的时候，如果此时 promise 还没有返回值
-          // 那么分别将回调加入到队列中，等待 resolve/reject 时执行
-          if (this.status === "pending") {
-            if (onFulfilled) {
-              this.resolveList.push({
-                onFulfilled,
-                nextResolve,
-                nextReject,
-              });
-            }
-            if (onRejected) {
-              this.exception = undefined;
-              this.rejectList.push({
-                onRejected,
-                nextResolve,
-                nextReject,
-              });
-            }
-          } else if (this.status === "fulfilled") {
-            // 如果 promise 已经有返回值，直接调用回调
-            if (onFulfilled) {
-              let res = onFulfilled(this.value);
-              nextResolve(res);
-            }
-          } else if (this.status === "rejected") {
-            // 如果 promise 已经有返回值，直接调用回调
-            if (onRejected) {
-              let res = onRejected(this.value);
-              nextResolve(res);
-            }
-          }
-        });
-
-        return p;
-      }
-
-      catch(onRejected) {
-        return this.then(null, onRejected);
-      }
+      path = "";
+      children = [];
+      name = "";
+      beforeEnter = () => {};
+      meta = {};
     }
 
-    let promise1 = new _Promise((resolve) => {
-      setTimeout(() => {
-        resolve(1);
-      }, 1000);
+    const router = new Router({
+      mode: "hash",
+      routes: [
+        {
+          path: "/home",
+          component() {
+            return `home page`;
+          },
+        },
+        {
+          path: "/about",
+          component() {
+            return `about page`;
+          },
+        },
+        {
+          path: "/category",
+          component() {
+            return `category page`;
+          },
+          children: [
+            {
+              path: "game",
+              component() {
+                return `category-game page`;
+              },
+            },
+            {
+              path: "sport",
+              component() {
+                return `category-sport page`;
+              },
+            },
+          ],
+        },
+      ],
     });
-    let promise2 = new _Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(2);
-      }, 500);
+    router.depend((route) => {
+      console.log("route :>> ", route);
     });
-    let promise3 = new _Promise((resolve, reject) => {
-      resolve(3);
+    router.push({
+      path: "/home",
     });
-    let promise4 = 4;
-
-    _Promise.race([promise1, promise2, promise3]).then(
-      (res) => {
-        console.log("res :>> ", res);
-      },
-      (err) => {
-        console.log("err :>> ", err);
-      }
-    );
   </script>
 </html>
