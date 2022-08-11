@@ -711,6 +711,7 @@
           stack,
           // 当前路径对应栈中的下标
           currentIndex: 0,
+          prevIndex: 0,
           push(ops, cb, isGo) {
             // 路径相同则不入栈
             const currentPath = this.getPath();
@@ -721,9 +722,10 @@
             // 如果是通过 router.go() 跳转的，则不添加历史记录到栈
             if (!isGo) {
               this.stack.push(ops.path);
+              this.prevIndex = this.currentIndex;
               this.currentIndex = this.stack.length - 1;
             }
-            cb && cb(ops.path);
+            cb && cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
           },
           register(cb) {
             window.addEventListener("hashchange", cb);
@@ -763,7 +765,19 @@
               cb,
               true
             );
+            this.prevIndex = this.currentIndex;
             this.currentIndex = i;
+          },
+          replace(ops, cb) {
+            // 路径相同则不处理
+            const currentPath = this.getPath();
+            if (currentPath === ops.path) {
+              return;
+            }
+            // 直接替换当前的路径
+            this.stack[this.currentIndex] = ops.path;
+            location.hash = `${ops.path}`;
+            cb && cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
           },
         };
       }
@@ -784,12 +798,15 @@
         }
         this.routes = this._initRoutes(this.routes);
         const currentPath = this.router.getPath();
+        this.prevRoute = this.currentRoute;
         this.currentRoute =
           this.routes.find((route) => route.path === currentPath) || null;
       }
 
       mode = "hash";
       routes = [];
+      // 上一个路由
+      prevRoute = null;
       // 当前路由
       currentRoute = null;
       router = null;
@@ -827,7 +844,7 @@
        * 当路由变化时执行回调
        **/
       notify() {
-        this.deps.forEach((v) => v(this.currentRoute));
+        this.deps.forEach((v) => v(this.currentRoute, this.prevRoute));
       }
 
       getRoutes() {
@@ -836,6 +853,7 @@
 
       push(ops) {
         this.router.push(ops, (path) => {
+          this.prevRoute = this.currentRoute;
           this.currentRoute = this.routes.find((v) => v.path === path) || null;
         });
       }
@@ -843,8 +861,10 @@
       hasRoute() {}
 
       go(num) {
-        this.router.go(num, (path) => {
-          this.currentRoute = this.routes.find((v) => v.path === path) || null;
+        this.router.go(num, (newPath, oldPath) => {
+          this.prevRoute = this.currentRoute;
+          this.currentRoute =
+            this.routes.find((v) => v.path === newPath) || null;
         });
       }
 
@@ -856,7 +876,13 @@
         this.go(1);
       }
 
-      replace() {}
+      replace(ops) {
+        this.router.replace(ops, (newPath, oldPath) => {
+          this.prevRoute = this.currentRoute;
+          this.currentRoute =
+            this.routes.find((v) => v.path === newPath) || null;
+        });
+      }
 
       beforeEach() {}
     }
@@ -913,8 +939,8 @@
         },
       ],
     });
-    router.depend((route) => {
-      console.log("route :>> ", route);
+    router.depend((currentRoute, prevRoute) => {
+      console.log('currentRoute, prevRoute :>> ', currentRoute, prevRoute);
     });
 
     const routerItems = document.querySelectorAll(".router-item");
@@ -926,7 +952,7 @@
       if (e) {
         const target = e.target;
         const path = target.dataset.path;
-        router.push({
+        router.replace({
           path,
         });
       }
