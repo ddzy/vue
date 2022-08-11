@@ -714,12 +714,6 @@
           prevIndex: 0,
           beforeEach: null,
           push(ops, cb, isGo) {
-            // 路径相同则不入栈
-            const currentPath = this.getPath();
-            if (currentPath === ops.path) {
-              return;
-            }
-
             // 执行 beforeEach 钩子
             if (this.beforeEach) {
               this.beforeEach(ops.path, currentPath, (newOps) => {
@@ -788,11 +782,6 @@
             this.currentIndex = i;
           },
           replace(ops, cb) {
-            // 路径相同则不处理
-            const currentPath = this.getPath();
-            if (currentPath === ops.path) {
-              return;
-            }
             // 执行 beforeEach 钩子
             if (this.beforeEach) {
               this.beforeEach(ops.path, currentPath, (newOps) => {
@@ -814,6 +803,42 @@
         };
       }
 
+      static createHistoryRouter(options) {
+        const event = new Event("changehistory");
+        const { pushState, replaceState } = window.history;
+        window.history.pushState = function (state, title, url) {
+          pushState.call(this, state, title, url);
+          window.dispatchEvent(event);
+        };
+        window.history.replaceState = function (state, title, url) {
+          replaceState.call(this, state, title, url);
+          window.dispatchEvent(event);
+        };
+
+        return {
+          beforeEach: null,
+          getPath() {
+            return location.pathname;
+          },
+          register(cb) {
+            window.addEventListener("popstate", cb);
+            window.addEventListener("changehistory", cb);
+          },
+          push(ops, cb) {
+            window.history.pushState(null, null, ops.path);
+            cb && cb(ops.path);
+          },
+          go(num, cb) {
+            window.history.go(num);
+            cb && cb(this.getPath());
+          },
+          replace(ops, cb) {
+            window.history.replaceState(null, null, ops.path);
+            cb && cb(ops.path);
+          },
+        };
+      }
+
       constructor(options) {
         for (const key in options) {
           if (this.hasOwnProperty(key)) {
@@ -827,6 +852,14 @@
             this.router.register(this.notify.bind(this));
             break;
           }
+          case "history": {
+            this.router = Router.createHistoryRouter({});
+            this.router.register(this.notify.bind(this));
+            break;
+          }
+          default: {
+            break;
+          }
         }
         this.routes = this._initRoutes(this.routes);
         const currentPath = this.router.getPath();
@@ -834,6 +867,7 @@
         this.currentRoute = this._findRouteByPath(currentPath);
       }
 
+      baseURL = "";
       mode = "hash";
       routes = [];
       // 上一个路由
@@ -865,6 +899,9 @@
       }
 
       _findRouteByPath(path) {
+        // 测试用
+        path = path.replace(this.baseURL, "");
+
         function helper(routes) {
           for (let i = 0; i < routes.length; i++) {
             const v = routes[i];
@@ -899,13 +936,16 @@
       }
 
       push(ops) {
+        const nextRoute = this._findRouteByPath(ops.path);
+        if (nextRoute === this.currentRoute) {
+          return;
+        }
+
         this.router.push(ops, (path) => {
           this.prevRoute = this.currentRoute;
           this.currentRoute = this._findRouteByPath(path) || null;
         });
       }
-
-      hasRoute() {}
 
       go(num) {
         this.router.go(num, (newPath, oldPath) => {
@@ -923,6 +963,11 @@
       }
 
       replace(ops) {
+        const nextRoute = this._findRouteByPath(ops.path);
+        if (nextRoute === this.currentRoute) {
+          return;
+        }
+
         this.router.replace(ops, (newPath, oldPath) => {
           this.prevRoute = this.currentRoute;
           this.currentRoute = this._findRouteByPath(newPath) || null;
@@ -955,7 +1000,8 @@
     }
 
     const router = new Router({
-      mode: "hash",
+      mode: "history",
+      baseURL: "http://localhost:5500/examples/demo/index.html",
       routes: [
         {
           path: "/home",
@@ -1012,9 +1058,10 @@
     function handleLinkClick(e) {
       if (e) {
         const target = e.target;
+        const baseURL = "http://localhost:5500/examples/demo/index.html";
         const path = target.dataset.path;
         router.push({
-          path,
+          path: `${baseURL}${path}`,
         });
       }
     }
