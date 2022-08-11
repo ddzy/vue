@@ -712,20 +712,39 @@
           // 当前路径对应栈中的下标
           currentIndex: 0,
           prevIndex: 0,
+          beforeEach: null,
           push(ops, cb, isGo) {
             // 路径相同则不入栈
             const currentPath = this.getPath();
             if (currentPath === ops.path) {
               return;
             }
-            location.hash = `${ops.path}`;
-            // 如果是通过 router.go() 跳转的，则不添加历史记录到栈
-            if (!isGo) {
-              this.stack.push(ops.path);
-              this.prevIndex = this.currentIndex;
-              this.currentIndex = this.stack.length - 1;
+
+            // 执行 beforeEach 钩子
+            if (this.beforeEach) {
+              this.beforeEach(ops.path, currentPath, (newOps) => {
+                ops = newOps || ops;
+                location.hash = `${ops.path}`;
+                // 如果是通过 router.go() 跳转的，则不添加历史记录到栈
+                if (!isGo) {
+                  this.stack.push(ops.path);
+                  this.prevIndex = this.currentIndex;
+                  this.currentIndex = this.stack.length - 1;
+                }
+                cb &&
+                  cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
+              });
+            } else {
+              location.hash = `${ops.path}`;
+              // 如果是通过 router.go() 跳转的，则不添加历史记录到栈
+              if (!isGo) {
+                this.stack.push(ops.path);
+                this.prevIndex = this.currentIndex;
+                this.currentIndex = this.stack.length - 1;
+              }
+              cb &&
+                cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
             }
-            cb && cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
           },
           register(cb) {
             window.addEventListener("hashchange", cb);
@@ -774,10 +793,23 @@
             if (currentPath === ops.path) {
               return;
             }
-            // 直接替换当前的路径
-            this.stack[this.currentIndex] = ops.path;
-            location.hash = `${ops.path}`;
-            cb && cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
+            // 执行 beforeEach 钩子
+            if (this.beforeEach) {
+              this.beforeEach(ops.path, currentPath, (newOps) => {
+                ops = newOps || ops;
+                // 直接替换当前的路径
+                this.stack[this.currentIndex] = ops.path;
+                location.hash = `${ops.path}`;
+                cb &&
+                  cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
+              });
+            } else {
+              // 直接替换当前的路径
+              this.stack[this.currentIndex] = ops.path;
+              location.hash = `${ops.path}`;
+              cb &&
+                cb(this.stack[this.currentIndex], this.stack[this.prevIndex]);
+            }
           },
         };
       }
@@ -799,8 +831,7 @@
         this.routes = this._initRoutes(this.routes);
         const currentPath = this.router.getPath();
         this.prevRoute = this.currentRoute;
-        this.currentRoute =
-          this.routes.find((route) => route.path === currentPath) || null;
+        this.currentRoute = this._findRouteByPath(currentPath);
       }
 
       mode = "hash";
@@ -833,6 +864,22 @@
         return routes;
       }
 
+      _findRouteByPath(path) {
+        function helper(routes) {
+          for (let i = 0; i < routes.length; i++) {
+            const v = routes[i];
+            if (v.path === path) {
+              return v;
+            }
+            if (v.children && v.children.length) {
+              helper(v.children);
+            }
+          }
+        }
+
+        return helper(this.routes);
+      }
+
       /**
        * 注册回调，当路由发生变化时触发
        **/
@@ -854,7 +901,7 @@
       push(ops) {
         this.router.push(ops, (path) => {
           this.prevRoute = this.currentRoute;
-          this.currentRoute = this.routes.find((v) => v.path === path) || null;
+          this.currentRoute = this._findRouteByPath(path) || null;
         });
       }
 
@@ -863,8 +910,7 @@
       go(num) {
         this.router.go(num, (newPath, oldPath) => {
           this.prevRoute = this.currentRoute;
-          this.currentRoute =
-            this.routes.find((v) => v.path === newPath) || null;
+          this.currentRoute = this._findRouteByPath(newPath) || null;
         });
       }
 
@@ -879,12 +925,18 @@
       replace(ops) {
         this.router.replace(ops, (newPath, oldPath) => {
           this.prevRoute = this.currentRoute;
-          this.currentRoute =
-            this.routes.find((v) => v.path === newPath) || null;
+          this.currentRoute = this._findRouteByPath(newPath) || null;
         });
       }
 
-      beforeEach() {}
+      beforeEach(cb) {
+        this.router.beforeEach = (toPath, fromPath, next) => {
+          // 寻找 Route
+          const to = this._findRouteByPath(toPath);
+          const from = this._findRouteByPath(fromPath);
+          cb(to, from, next);
+        };
+      }
     }
     class Route {
       constructor(options) {
@@ -940,7 +992,16 @@
       ],
     });
     router.depend((currentRoute, prevRoute) => {
-      console.log('currentRoute, prevRoute :>> ', currentRoute, prevRoute);
+      console.log("currentRoute, prevRoute :>> ", currentRoute, prevRoute);
+    });
+    router.beforeEach((to, from, next) => {
+      if (to.path === "/home") {
+        next({
+          path: "/about",
+        });
+      } else {
+        next();
+      }
     });
 
     const routerItems = document.querySelectorAll(".router-item");
@@ -952,7 +1013,7 @@
       if (e) {
         const target = e.target;
         const path = target.dataset.path;
-        router.replace({
+        router.push({
           path,
         });
       }
