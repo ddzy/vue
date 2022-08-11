@@ -700,6 +700,7 @@
           return location.hash.replace(/^#/, "");
         }
         const path = getPath();
+        // 历史记录栈
         const stack = [];
 
         if (path) {
@@ -707,7 +708,6 @@
         }
 
         return {
-          // 历史记录栈
           stack,
           // 当前路径对应栈中的下标
           currentIndex: 0,
@@ -782,9 +782,7 @@
             break;
           }
         }
-        this.routes = this.routes.map((route) => {
-          return new Route(route);
-        });
+        this.routes = this._initRoutes(this.routes);
         const currentPath = this.router.getPath();
         this.currentRoute =
           this.routes.find((route) => route.path === currentPath) || null;
@@ -796,6 +794,27 @@
       currentRoute = null;
       router = null;
       deps = [];
+
+      _initRoutes(routes) {
+        function helper(children, parentRoute) {
+          for (let i = 0; i < children.length; i++) {
+            children[i] = new Route(children[i]);
+            let v = children[i];
+
+            // 如果子路由的 path 不以 / 开头
+            if (!/^\//.test(v.path) && parentRoute) {
+              v.path = `${parentRoute.path}/${v.path}`;
+            }
+
+            if (v.children && v.children.length) {
+              helper(v.children, children[i]);
+            }
+          }
+        }
+
+        helper(routes, routes);
+        return routes;
+      }
 
       /**
        * 注册回调，当路由发生变化时触发
