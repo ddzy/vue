@@ -1066,4 +1066,143 @@
       }
     }
   </script>
+  <script>
+    class Store {
+      constructor(options) {
+        this.options = {
+          ...this.options,
+          ...options,
+        };
+        this.state = this._initState(this.options);
+        this.getters = this._initGetters(this.options);
+        this.mutations = this._initMutations(this.options);
+        this.actions = this._initActions(this.options);
+      }
+
+      state = {};
+      getters = {};
+      mutations = {};
+      actions = {};
+      options = {
+        namespaced: false,
+        modules: {},
+        state: {},
+        getters: {},
+        mutations: {},
+        actions: {},
+      };
+
+      _initState(options) {
+        const result = options.state || {};
+
+        // 递归将嵌套的 modules.state 挂载到其父级的 state 上
+        function helper(modules, parentState) {
+          for (const key in modules) {
+            const value = modules[key];
+            value.state = value.state || {};
+
+            if (value.modules) {
+              helper(value.modules, value.state);
+            }
+            parentState[key] = value.state;
+          }
+        }
+        helper(options.modules, result);
+
+        return result;
+      }
+      _initGetters(options) {}
+      _initMutations(options) {
+        const result = options.mutations || {};
+
+        function helper(modules, parentMutations, rootMutations) {
+          for (const key in modules) {
+            const value = modules[key];
+            if (!parentMutations[key]) {
+              parentMutations[key] = {};
+            }
+
+            if (value.mutations) {
+              for (const innerKey in value.mutations) {
+                const innerValue = value.mutations[innerKey];
+                // 非私有模块，直接将 mutations 挂载到根 mutations
+                if (!value.namespaced) {
+                  rootMutations[innerKey] = innerValue;
+                } else {
+                  // 私有模块，将 mutations 挂载到父级 mutations
+                  parentMutations[key][innerKey] = innerValue;
+                }
+              }
+            }
+            if (value.modules) {
+              helper(value.modules, parentMutations[key], rootMutations);
+            }
+          }
+        }
+        helper(options.modules, result, result);
+
+        return result;
+      }
+      _initActions(options) {}
+
+      commit(type, paylaod) {}
+
+      dispatch(type, payload) {}
+    }
+
+    const moduleAA = {
+      namespaced: true,
+      state: {
+        e: 5,
+      },
+      mutations: {
+        SET_e(state, payload) {
+          state.e = payload;
+        },
+      },
+    };
+    const moduleA = {
+      namespaced: true,
+      state: {
+        c: 3,
+        d: 4,
+      },
+      modules: {
+        moduleAA,
+      },
+      mutations: {
+        SET_c(state, payload) {
+          state.c = payload;
+        },
+        SET_d(state, payload) {
+          state.d = payload;
+        },
+      },
+    };
+    const moduleB = {
+      state: {
+        f: 6,
+      },
+    };
+    const store = new Store({
+      state: {
+        a: 1,
+        b: 2,
+      },
+      modules: {
+        moduleA,
+        moduleB,
+      },
+      mutations: {
+        SET_a(state, payload) {
+          state.a = payload;
+        },
+        SET_b(state, payload) {
+          state.b = payload;
+        },
+      },
+    });
+
+    console.log("store :>> ", store);
+  </script>
 </html>
