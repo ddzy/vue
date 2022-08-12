@@ -1073,16 +1073,21 @@
           ...this.options,
           ...options,
         };
-        this.state = this._initState(this.options);
-        this.getters = this._initOthers(this.options, "getters");
-        this.mutations = this._initOthers(this.options, "mutations");
-        this.actions = this._initOthers(this.options, "actions");
+        this.options.state = this._initState(this.options);
+        this.options.getters = this._initUnnamespacedOthers(
+          this.options,
+          "getters"
+        );
+        this.options.mutations = this._initUnnamespacedOthers(
+          this.options,
+          "mutations"
+        );
+        this.options.actions = this._initUnnamespacedOthers(
+          this.options,
+          "actions"
+        );
       }
 
-      state = {};
-      getters = {};
-      mutations = {};
-      actions = {};
       options = {
         namespaced: false,
         modules: {},
@@ -1112,40 +1117,60 @@
         return result;
       }
 
-      _initOthers(options, type) {
+      _initUnnamespacedOthers(options, type) {
         // 递归格式化 mutations、getters、actions
         const result = options[type] || {};
 
-        function helper(modules, parent, root) {
+        function helper(modules, result) {
           for (const key in modules) {
-            const value = modules[key];
-            if (!parent[key]) {
-              parent[key] = {};
-            }
-
-            if (value[type]) {
-              for (const innerKey in value[type]) {
-                const innerValue = value[type][innerKey];
-                // 非私有模块，直接将 [type] 挂载到根 [type]
-                if (!value.namespaced) {
-                  root[innerKey] = innerValue;
-                } else {
-                  // 私有模块，将 [type] 挂载到父级 [type]
-                  parent[key][innerKey] = innerValue;
+            if (Object.hasOwnProperty.call(modules, key)) {
+              const value = modules[key];
+              if (value[type]) {
+                for (const innerKey in value[type]) {
+                  const innerValue = value[type][innerKey];
+                  // 私有模块不作处理
+                  // 非私有模块，直接将 [type] 挂载到根 [type]
+                  if (!value.namespaced) {
+                    result[innerKey] = innerValue;
+                  }
                 }
               }
-            }
-            if (value.modules) {
-              helper(value.modules, parent[key], root);
+              if (value.modules) {
+                helper(value.modules, value[type] || {});
+              }
             }
           }
         }
-        helper(options.modules, result, result);
+        helper(options.modules, result);
 
         return result;
       }
 
-      commit(type, paylaod) {}
+      commit(type, payload) {
+        type = type.split("/");
+        let i = 0;
+        let mutation = this.mutations;
+        let state = this.state;
+
+        // 如果根 mutations 有，则直接执行
+        if (mutation[type]) {
+          mutation[type](state);
+        }
+
+        try {
+          while (i <= type.length - 1) {
+            if (i <= type.length - 2) {
+              state = state[type[i]];
+            }
+            mutation = mutation[type[i]];
+            i++;
+          }
+
+          mutation(state, payload);
+        } catch (error) {
+          throw error;
+        }
+      }
 
       dispatch(type, payload) {}
     }
@@ -1226,5 +1251,6 @@
     });
 
     console.log("store :>> ", store);
+    // store.commit("moduleA/moduleAA/SET_e", 1);
   </script>
 </html>
