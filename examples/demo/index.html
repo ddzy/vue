@@ -1074,9 +1074,9 @@
           ...options,
         };
         this.state = this._initState(this.options);
-        this.getters = this._initGetters(this.options);
-        this.mutations = this._initMutations(this.options);
-        this.actions = this._initActions(this.options);
+        this.getters = this._initOthers(this.options, "getters");
+        this.mutations = this._initOthers(this.options, "mutations");
+        this.actions = this._initOthers(this.options, "actions");
       }
 
       state = {};
@@ -1111,31 +1111,32 @@
 
         return result;
       }
-      _initGetters(options) {}
-      _initMutations(options) {
-        const result = options.mutations || {};
 
-        function helper(modules, parentMutations, rootMutations) {
+      _initOthers(options, type) {
+        // 递归格式化 mutations、getters、actions
+        const result = options[type] || {};
+
+        function helper(modules, parent, root) {
           for (const key in modules) {
             const value = modules[key];
-            if (!parentMutations[key]) {
-              parentMutations[key] = {};
+            if (!parent[key]) {
+              parent[key] = {};
             }
 
-            if (value.mutations) {
-              for (const innerKey in value.mutations) {
-                const innerValue = value.mutations[innerKey];
-                // 非私有模块，直接将 mutations 挂载到根 mutations
+            if (value[type]) {
+              for (const innerKey in value[type]) {
+                const innerValue = value[type][innerKey];
+                // 非私有模块，直接将 [type] 挂载到根 [type]
                 if (!value.namespaced) {
-                  rootMutations[innerKey] = innerValue;
+                  root[innerKey] = innerValue;
                 } else {
-                  // 私有模块，将 mutations 挂载到父级 mutations
-                  parentMutations[key][innerKey] = innerValue;
+                  // 私有模块，将 [type] 挂载到父级 [type]
+                  parent[key][innerKey] = innerValue;
                 }
               }
             }
             if (value.modules) {
-              helper(value.modules, parentMutations[key], rootMutations);
+              helper(value.modules, parent[key], root);
             }
           }
         }
@@ -1143,7 +1144,6 @@
 
         return result;
       }
-      _initActions(options) {}
 
       commit(type, paylaod) {}
 
@@ -1178,10 +1178,27 @@
           state.d = payload;
         },
       },
+      getters: {
+        GET_c(state) {
+          return state.c + "-" + state.c;
+        },
+      },
     };
     const moduleB = {
       state: {
         f: 6,
+      },
+      mutations: {
+        SET_f(state, payload) {
+          state.f = payload;
+        },
+      },
+      actions: {
+        DISPATCH_GET_f(store) {
+          setTimeout(() => {
+            store.commit("SET_f", state.f * state.f);
+          }, 1000);
+        },
       },
     };
     const store = new Store({
@@ -1199,6 +1216,11 @@
         },
         SET_b(state, payload) {
           state.b = payload;
+        },
+      },
+      getters: {
+        GET_a(state) {
+          return state.a + "-" + state.a;
         },
       },
     });
