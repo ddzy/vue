@@ -1073,19 +1073,7 @@
           ...this.options,
           ...options,
         };
-        this.options.state = this._initState(this.options);
-        this.options.getters = this._initUnnamespacedOthers(
-          this.options,
-          "getters"
-        );
-        this.options.mutations = this._initUnnamespacedOthers(
-          this.options,
-          "mutations"
-        );
-        this.options.actions = this._initUnnamespacedOthers(
-          this.options,
-          "actions"
-        );
+        this._initModuleMap(this.options);
       }
 
       options = {
@@ -1096,83 +1084,92 @@
         mutations: {},
         actions: {},
       };
+      _modulePathMap = {};
+      _mutationMap = {};
+      _actionMap = {};
+      _getterMap = {};
 
-      _initState(options) {
-        const result = options.state || {};
+      _initModuleMap(options) {
+        const newModulePathMap = {};
+        const newMutationMap = {};
+        const newActionMap = {};
+        const newGetterMap = {};
 
-        // 递归将嵌套的 modules.state 挂载到其父级的 state 上
-        function helper(modules, parentState) {
-          for (const key in modules) {
-            const value = modules[key];
-            value.state = value.state || {};
-
-            if (value.modules) {
-              helper(value.modules, value.state);
-            }
-            parentState[key] = value.state;
-          }
-        }
-        helper(options.modules, result);
-
-        return result;
-      }
-
-      _initUnnamespacedOthers(options, type) {
-        // 递归格式化 mutations、getters、actions
-        const result = options[type] || {};
-
-        function helper(modules, result) {
+        function helper(modules, parentPath) {
           for (const key in modules) {
             if (Object.hasOwnProperty.call(modules, key)) {
               const value = modules[key];
-              if (value[type]) {
-                for (const innerKey in value[type]) {
-                  const innerValue = value[type][innerKey];
-                  // 私有模块不作处理
-                  // 非私有模块，直接将 [type] 挂载到根 [type]
-                  if (!value.namespaced) {
-                    result[innerKey] = innerValue;
+              let currentPath = !parentPath ? `${key}` : `${parentPath}/${key}`;
+
+              if (!value.namespaced) {
+                if (value.mutations) {
+                  for (const mutationKey in value.mutations) {
+                    const mutationFunc = value.mutations[mutationKey];
+                    newMutationMap[mutationKey] = mutationFunc.bind(
+                      value,
+                      value.state
+                    );
+                  }
+                }
+                if (value.actions) {
+                  for (const actionKey in value.actions) {
+                    const actionFunc = value.actions[actionKey];
+                    newActionMap[actionKey] = actionFunc.bind(
+                      value,
+                      value.state
+                    );
+                  }
+                }
+                if (value.getters) {
+                  for (const getterKey in value.getters) {
+                    const getterFunc = value.getters[getterKey];
+                    newGetterMap[getterKey] = getterFunc.bind(
+                      value,
+                      value.state
+                    );
                   }
                 }
               }
+              newModulePathMap[currentPath] = value;
               if (value.modules) {
-                helper(value.modules, value[type] || {});
+                helper(value.modules, currentPath);
               }
             }
           }
         }
-        helper(options.modules, result);
+        helper(options.modules, ``);
 
-        return result;
+        this._modulePathMap = newModulePathMap;
+        this._mutationMap = newMutationMap;
+        this._actionMap = newActionMap;
+        this._getterMap = newGetterMap;
       }
 
       commit(type, payload) {
-        type = type.split("/");
-        let i = 0;
-        let mutation = this.mutations;
-        let state = this.state;
+        if (this._mutationMap.hasOwnProperty(type)) {
+          this._mutationMap[type](payload);
+        } else {
+          let split = type.split("/");
+          let path = split.slice(0, split.length - 1).join("/");
+          let mutationName = split[split.length - 1];
+          const module = this._modulePathMap[path];
 
-        // 如果根 mutations 有，则直接执行
-        if (mutation[type]) {
-          mutation[type](state);
-        }
-
-        try {
-          while (i <= type.length - 1) {
-            if (i <= type.length - 2) {
-              state = state[type[i]];
-            }
-            mutation = mutation[type[i]];
-            i++;
-          }
-
-          mutation(state, payload);
-        } catch (error) {
-          throw error;
+          module["mutations"][mutationName](module.state, payload);
         }
       }
 
-      dispatch(type, payload) {}
+      dispatch(type, payload) {
+        if (this._actionMap.hasOwnProperty(type)) {
+          this._actionMap[type](payload);
+        } else {
+          let split = type.split("/");
+          let path = split.slice(0, split.length - 1).join("/");
+          let actionName = split[split.length - 1];
+          const module = this._modulePathMap[path];
+
+          module["actions"][actionName](module, payload);
+        }
+      }
     }
 
     const moduleAA = {
@@ -1225,6 +1222,11 @@
           }, 1000);
         },
       },
+      getters: {
+        GET_f(state) {
+          return state.f;
+        },
+      },
     };
     const store = new Store({
       state: {
@@ -1251,6 +1253,7 @@
     });
 
     console.log("store :>> ", store);
-    // store.commit("moduleA/moduleAA/SET_e", 1);
+    store.commit("moduleA/moduleAA/SET_e", 1);
+    store.commit("SET_f", 1);
   </script>
 </html>
