@@ -1067,193 +1067,305 @@
     }
   </script>
   <script>
-    class Store {
-      constructor(options) {
-        this.options = {
-          ...this.options,
-          ...options,
-        };
-        this._initModuleMap(this.options);
-      }
+    // class Store {
+    //   constructor(options) {
+    //     this.options = {
+    //       ...this.options,
+    //       ...options,
+    //     };
+    //     this._initModuleMap(this.options);
+    //   }
 
-      options = {
-        namespaced: false,
-        modules: {},
-        state: {},
-        getters: {},
-        mutations: {},
-        actions: {},
+    //   options = {
+    //     namespaced: false,
+    //     modules: {},
+    //     state: {},
+    //     getters: {},
+    //     mutations: {},
+    //     actions: {},
+    //   };
+    //   _modulePathMap = {};
+    //   _mutationMap = {};
+    //   _actionMap = {};
+    //   _getterMap = {};
+
+    //   _initModuleMap(options) {
+    //     const newModulePathMap = {};
+    //     const newMutationMap = {};
+    //     const newActionMap = {};
+    //     const newGetterMap = {};
+
+    //     function helper(modules, parentPath) {
+    //       for (const key in modules) {
+    //         if (Object.hasOwnProperty.call(modules, key)) {
+    //           const value = modules[key];
+    //           let currentPath = !parentPath ? `${key}` : `${parentPath}/${key}`;
+
+    //           if (!value.namespaced) {
+    //             if (value.mutations) {
+    //               for (const mutationKey in value.mutations) {
+    //                 const mutationFunc = value.mutations[mutationKey];
+    //                 newMutationMap[mutationKey] = mutationFunc.bind(
+    //                   value,
+    //                   value.state
+    //                 );
+    //               }
+    //             }
+    //             if (value.actions) {
+    //               for (const actionKey in value.actions) {
+    //                 const actionFunc = value.actions[actionKey];
+    //                 newActionMap[actionKey] = actionFunc.bind(
+    //                   value,
+    //                   value.state
+    //                 );
+    //               }
+    //             }
+    //             if (value.getters) {
+    //               for (const getterKey in value.getters) {
+    //                 const getterFunc = value.getters[getterKey];
+    //                 newGetterMap[getterKey] = getterFunc.bind(
+    //                   value,
+    //                   value.state
+    //                 );
+    //               }
+    //             }
+    //           }
+    //           newModulePathMap[currentPath] = value;
+    //           if (value.modules) {
+    //             helper(value.modules, currentPath);
+    //           }
+    //         }
+    //       }
+    //     }
+    //     helper(options.modules, ``);
+
+    //     this._modulePathMap = newModulePathMap;
+    //     this._mutationMap = newMutationMap;
+    //     this._actionMap = newActionMap;
+    //     this._getterMap = newGetterMap;
+    //   }
+
+    //   commit(type, payload) {
+    //     if (this._mutationMap.hasOwnProperty(type)) {
+    //       this._mutationMap[type](payload);
+    //     } else {
+    //       let split = type.split("/");
+    //       let path = split.slice(0, split.length - 1).join("/");
+    //       let mutationName = split[split.length - 1];
+    //       const module = this._modulePathMap[path];
+
+    //       module["mutations"][mutationName](module.state, payload);
+    //     }
+    //   }
+
+    //   dispatch(type, payload) {
+    //     if (this._actionMap.hasOwnProperty(type)) {
+    //       this._actionMap[type](payload);
+    //     } else {
+    //       let split = type.split("/");
+    //       let path = split.slice(0, split.length - 1).join("/");
+    //       let actionName = split[split.length - 1];
+    //       const module = this._modulePathMap[path];
+
+    //       module["actions"][actionName](module, payload);
+    //     }
+    //   }
+    // }
+
+    // const moduleAA = {
+    //   namespaced: true,
+    //   state: {
+    //     e: 5,
+    //   },
+    //   mutations: {
+    //     SET_e(state, payload) {
+    //       state.e = payload;
+    //     },
+    //   },
+    // };
+    // const moduleA = {
+    //   namespaced: true,
+    //   state: {
+    //     c: 3,
+    //     d: 4,
+    //   },
+    //   modules: {
+    //     moduleAA,
+    //   },
+    //   mutations: {
+    //     SET_c(state, payload) {
+    //       state.c = payload;
+    //     },
+    //     SET_d(state, payload) {
+    //       state.d = payload;
+    //     },
+    //   },
+    //   getters: {
+    //     GET_c(state) {
+    //       return state.c + "-" + state.c;
+    //     },
+    //   },
+    // };
+    // const moduleB = {
+    //   state: {
+    //     f: 6,
+    //   },
+    //   mutations: {
+    //     SET_f(state, payload) {
+    //       state.f = payload;
+    //     },
+    //   },
+    //   actions: {
+    //     DISPATCH_GET_f(store) {
+    //       setTimeout(() => {
+    //         store.commit("SET_f", state.f * state.f);
+    //       }, 1000);
+    //     },
+    //   },
+    //   getters: {
+    //     GET_f(state) {
+    //       return state.f;
+    //     },
+    //   },
+    // };
+    // const store = new Store({
+    //   state: {
+    //     a: 1,
+    //     b: 2,
+    //   },
+    //   modules: {
+    //     moduleA,
+    //     moduleB,
+    //   },
+    //   mutations: {
+    //     SET_a(state, payload) {
+    //       state.a = payload;
+    //     },
+    //     SET_b(state, payload) {
+    //       state.b = payload;
+    //     },
+    //   },
+    //   getters: {
+    //     GET_a(state) {
+    //       return state.a + "-" + state.a;
+    //     },
+    //   },
+    // });
+
+    // console.log("store :>> ", store);
+    // store.commit("moduleA/moduleAA/SET_e", 1);
+    // store.commit("SET_f", 1);
+  </script>
+
+  <script>
+    function getType(v) {
+      const t = {}.toString.call(v);
+      return t.substring(8, t.length - 1).toLowerCase();
+    }
+    function genWrapper(type) {
+      const t = {
+        map: new Map(),
+        set: new Set(),
+        array: [],
+        object: {},
       };
-      _modulePathMap = {};
-      _mutationMap = {};
-      _actionMap = {};
-      _getterMap = {};
 
-      _initModuleMap(options) {
-        const newModulePathMap = {};
-        const newMutationMap = {};
-        const newActionMap = {};
-        const newGetterMap = {};
-
-        function helper(modules, parentPath) {
-          for (const key in modules) {
-            if (Object.hasOwnProperty.call(modules, key)) {
-              const value = modules[key];
-              let currentPath = !parentPath ? `${key}` : `${parentPath}/${key}`;
-
-              if (!value.namespaced) {
-                if (value.mutations) {
-                  for (const mutationKey in value.mutations) {
-                    const mutationFunc = value.mutations[mutationKey];
-                    newMutationMap[mutationKey] = mutationFunc.bind(
-                      value,
-                      value.state
-                    );
-                  }
-                }
-                if (value.actions) {
-                  for (const actionKey in value.actions) {
-                    const actionFunc = value.actions[actionKey];
-                    newActionMap[actionKey] = actionFunc.bind(
-                      value,
-                      value.state
-                    );
-                  }
-                }
-                if (value.getters) {
-                  for (const getterKey in value.getters) {
-                    const getterFunc = value.getters[getterKey];
-                    newGetterMap[getterKey] = getterFunc.bind(
-                      value,
-                      value.state
-                    );
-                  }
-                }
-              }
-              newModulePathMap[currentPath] = value;
-              if (value.modules) {
-                helper(value.modules, currentPath);
-              }
+      return t[type];
+    }
+    function canCopyDirectly(type) {
+      return [
+        "string",
+        "boolean",
+        "number",
+        "undefined",
+        "null",
+        "symbol",
+        "function",
+      ].includes(type);
+    }
+    function _deepCloneHelper(target, wrapper, targetType) {
+      if (["map", "set"].includes(targetType)) {
+        for (const [key, value] of target.entries()) {
+          if (canCopyDirectly(getType(value))) {
+            if (targetType === "map") {
+              wrapper.set(key, value);
+            } else {
+              wrapper.add(value);
+            }
+          } else {
+            const g = genWrapper(getType(value));
+            if (targetType === "map") {
+              wrapper.set(key, g);
+              _deepCloneHelper(value, g, getType(value));
+            } else {
+              wrapper.add(g);
+              _deepCloneHelper(value, g, getType(value));
             }
           }
         }
-        helper(options.modules, ``);
-
-        this._modulePathMap = newModulePathMap;
-        this._mutationMap = newMutationMap;
-        this._actionMap = newActionMap;
-        this._getterMap = newGetterMap;
-      }
-
-      commit(type, payload) {
-        if (this._mutationMap.hasOwnProperty(type)) {
-          this._mutationMap[type](payload);
-        } else {
-          let split = type.split("/");
-          let path = split.slice(0, split.length - 1).join("/");
-          let mutationName = split[split.length - 1];
-          const module = this._modulePathMap[path];
-
-          module["mutations"][mutationName](module.state, payload);
-        }
-      }
-
-      dispatch(type, payload) {
-        if (this._actionMap.hasOwnProperty(type)) {
-          this._actionMap[type](payload);
-        } else {
-          let split = type.split("/");
-          let path = split.slice(0, split.length - 1).join("/");
-          let actionName = split[split.length - 1];
-          const module = this._modulePathMap[path];
-
-          module["actions"][actionName](module, payload);
+      } else {
+        for (const key in target) {
+          if (Object.hasOwnProperty.call(target, key)) {
+            const value = target[key];
+            if (canCopyDirectly(getType(value))) {
+              wrapper[key] = value;
+            } else {
+              wrapper[key] = genWrapper(getType(value));
+              _deepCloneHelper(value, wrapper[key], getType(value));
+            }
+          }
         }
       }
     }
+    function deepClone(target) {
+      const targetType = getType(target);
+      const wrapper = genWrapper(targetType);
 
-    const moduleAA = {
-      namespaced: true,
-      state: {
-        e: 5,
+      _deepCloneHelper(target, wrapper, targetType);
+
+      return wrapper;
+    }
+
+    const target1 = [
+      1,
+      false,
+      function a() {
+        console.log(b);
       },
-      mutations: {
-        SET_e(state, payload) {
-          state.e = payload;
-        },
-      },
-    };
-    const moduleA = {
-      namespaced: true,
-      state: {
-        c: 3,
-        d: 4,
-      },
-      modules: {
-        moduleAA,
-      },
-      mutations: {
-        SET_c(state, payload) {
-          state.c = payload;
-        },
-        SET_d(state, payload) {
-          state.d = payload;
-        },
-      },
-      getters: {
-        GET_c(state) {
-          return state.c + "-" + state.c;
-        },
-      },
-    };
-    const moduleB = {
-      state: {
-        f: 6,
-      },
-      mutations: {
-        SET_f(state, payload) {
-          state.f = payload;
-        },
-      },
-      actions: {
-        DISPATCH_GET_f(store) {
-          setTimeout(() => {
-            store.commit("SET_f", state.f * state.f);
-          }, 1000);
-        },
-      },
-      getters: {
-        GET_f(state) {
-          return state.f;
-        },
-      },
-    };
-    const store = new Store({
-      state: {
+      null,
+      undefined,
+      {
         a: 1,
-        b: 2,
-      },
-      modules: {
-        moduleA,
-        moduleB,
-      },
-      mutations: {
-        SET_a(state, payload) {
-          state.a = payload;
+        b: [1, 2, 3, false],
+        c: {
+          d: [5, 6, 7],
         },
-        SET_b(state, payload) {
-          state.b = payload;
-        },
+        e: [
+          {
+            f: [9, 10, 11],
+          },
+        ],
+        g: undefined,
       },
-      getters: {
-        GET_a(state) {
-          return state.a + "-" + state.a;
-        },
-      },
-    });
-
-    console.log("store :>> ", store);
-    store.commit("moduleA/moduleAA/SET_e", 1);
-    store.commit("SET_f", 1);
+      [12, 13, { h: 14 }],
+      new Map([
+        [0, { a: 1 }],
+        [1, { b: [2] }],
+      ]),
+      new Set([
+        { a: 1, b: 2 },
+        { c: 3, d: 4 },
+      ]),
+    ];
+    const clonedTarget1 = deepClone(target1);
+    clonedTarget1[5].c.d.push(8);
+    console.log("clonedTarget1 :>> ", clonedTarget1);
+    console.log("target1 :>> ", target1);
+    console.log("clonedTarget1[2] :>> ", clonedTarget1[5] === target1[5]);
+    console.log("clonedTarget1[2] :>> ", clonedTarget1[7] === target1[7]);
+    clonedTarget1[7].set(0, 2);
+    clonedTarget1[8].add(1);
+    console.log("clonedTarget1 :>> ", clonedTarget1);
+    console.log("target1 :>> ", target1);
   </script>
 </html>
